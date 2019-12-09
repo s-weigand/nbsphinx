@@ -54,14 +54,15 @@ jobs:
         if: always()
         run: |
           python --version
-          pip freeze
+          python -c "import nbsphinx; print('nbsphinx.__version__==', nbsphinx.__version__)"
           pandoc -v
-      - name: Build docs
-        run: |
-          python -m nbsphinx
-          python -m sphinx doc/ doc/_build/ -W -b html
-          python -m sphinx doc/ doc/_build/ -W -b latex
-          python -m sphinx doc/ doc/_build/ -W -b epub
+          pip freeze
+      - name: Build docs HTML
+        run: python -m sphinx doc/ doc/_build/html/ -W -b html
+      - name: Build docs LaTeX
+        run: python -m sphinx doc/ doc/_build/latex/ -W -b latex
+      - name: Build docs ePub
+        run: python -m sphinx doc/ doc/_build/epub/ -W -b epub
       - name: Upload _build folder
         uses: actions/upload-artifact@master
         with:
@@ -96,14 +97,15 @@ jobs:
         if: always()
         run: |
           python --version
-          pip freeze
+          python -c "import nbsphinx; print('nbsphinx.__version__==', nbsphinx.__version__)"
           pandoc -v
-      - name: Build docs
-        run: |
-          python -m nbsphinx
-          python -m sphinx doc/ doc/_build/ -W -b html
-          python -m sphinx doc/ doc/_build/ -W -b latex
-          python -m sphinx doc/ doc/_build/ -W -b epub
+          pip freeze
+      - name: Build docs HTML
+        run: python -m sphinx doc/ doc/_build/html/ -W -b html
+      - name: Build docs LaTeX
+        run: python -m sphinx doc/ doc/_build/latex/ -W -b latex
+      - name: Build docs ePub
+        run: python -m sphinx doc/ doc/_build/epub/ -W -b epub
       - name: Upload _build folder
         uses: actions/upload-artifact@master
         with:
@@ -138,11 +140,11 @@ jobs:
         if: always()
         run: |
           python --version
-          pip freeze
+          python -c "import nbsphinx; print 'nbsphinx.__version__==', nbsphinx.__version__"
           pandoc -v
-      - name: Build docs
+          pip freeze
+      - name: Build docs HTML
         run: |
-          python -m nbsphinx
           # We don't execute, because the example notebooks use Python 3
           python -m sphinx doc/ doc/_build/ -W -b html -D nbsphinx_execute=never
       - name: Upload _build folder
