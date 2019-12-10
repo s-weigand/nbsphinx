@@ -63,6 +63,11 @@ jobs:
         run: python -m sphinx doc/ doc/_build/latex/ -W -b latex
       - name: Build docs ePub
         run: python -m sphinx doc/ doc/_build/epub/ -W -b epub
+      - name: Cache Tectonic Packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.cache/Tectonic
+          key: ${{ runner.os }}-tectonic-packages
       - name: Build PDF from LaTeX
         run: tectonic doc/_build/latex/nbsphinx.tex
       - name: Upload _build folder
@@ -109,6 +114,18 @@ jobs:
         run: python -m sphinx doc/ doc/_build/latex/ -W -b latex
       - name: Build docs ePub
         run: python -m sphinx doc/ doc/_build/epub/ -W -b epub
+      - name: Cache Tectonic Packages Linux
+        if: runner.os == 'Linux'
+        uses: actions/cache@v1
+        with:
+          path: ~/.cache/Tectonic
+          key: ${{ runner.os }}-tectonic-packages
+      - name: Cache Tectonic Packages MacOs
+        if: runner.os == 'macOS'
+        uses: actions/cache@v1
+        with:
+          path: ~/Library/Caches/Tectonic
+          key: ${{ runner.os }}-tectonic-packages
       - name: Build PDF from LaTeX
         run: tectonic doc/_build/latex/nbsphinx.tex
       - name: Upload _build folder
