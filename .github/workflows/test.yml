@@ -57,8 +57,6 @@ jobs:
           python -c "import nbsphinx; print('nbsphinx.__version__==', nbsphinx.__version__)"
           pandoc -v
           pip freeze
-      - name: Ensure clean Build
-        run: rm -rf doc/_build/
       - name: Build docs HTML
         run: python -m sphinx doc/ doc/_build/html/ -W -b html
       - name: Build docs LaTeX
@@ -66,13 +64,13 @@ jobs:
       - name: Build docs ePub
         run: python -m sphinx doc/ doc/_build/epub/ -W -b epub
       - name: Build PDF from LaTeX
-        uses: xu-cheng/latex-action@master
+        uses: xu-cheng/latex-action@1.2.1
         with:
           root_file: nbsphinx.tex
           working_directory: doc/_build/latex
       - name: Upload _build folder
         if: always()
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v1
         with:
           name: docs-sphinx${{ matrix.SPHINX }}
           path: doc/_build
@@ -108,8 +106,6 @@ jobs:
           python -c "import nbsphinx; print('nbsphinx.__version__==', nbsphinx.__version__)"
           pandoc -v
           pip freeze
-      - name: Ensure clean Build
-        run: rm -rf doc/_build/
       - name: Build docs HTML
         run: python -m sphinx doc/ doc/_build/html/ -W -b html
       - name: Build docs LaTeX
@@ -118,13 +114,13 @@ jobs:
         run: python -m sphinx doc/ doc/_build/epub/ -W -b epub
       - name: Build PDF from LaTeX
         if: matrix.os == 'ubuntu-latest'
-        uses: xu-cheng/latex-action@master
+        uses: xu-cheng/latex-action@1.2.1
         with:
           root_file: nbsphinx.tex
           working_directory: doc/_build/latex
       - name: Upload _build folder
         if: always()
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v1
         with:
           name: docs-${{ matrix.os }}-py${{ matrix.python-version }}
           path: doc/_build
@@ -160,14 +156,12 @@ jobs:
           python -c "import nbsphinx; print 'nbsphinx.__version__==', nbsphinx.__version__"
           pandoc -v
           pip freeze
-      - name: Ensure clean Build
-        run: rm -rf doc/_build/
       - name: Build docs HTML
         run: |
           # We don't execute, because the example notebooks use Python 3
           python -m sphinx doc/ doc/_build/ -W -b html -D nbsphinx_execute=never
       - name: Upload _build folder
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v1
         with:
           name: docs-${{ matrix.os }}-py2.7
           path: doc/_build
