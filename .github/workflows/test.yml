@@ -149,6 +149,7 @@ jobs:
           python -m pip install sphinxcontrib-bibtex==0.4.2
           python -m pip install sphinxcontrib-svg2pdfconverter
           python -m pip install ipywidgets
+          python -m pip install 'sphinx-copybutton<0.2.6'
       - name: Show installed dependencies
         if: always()
         run: |
