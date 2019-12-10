@@ -45,7 +45,7 @@ jobs:
           conda-channels: conda-forge
       - name: Install dependencies
         run: |
-          conda install -y pandoc librsvg
+          conda install -y pandoc librsvg tectonic
           python -m pip install Sphinx$SPHINX
           python -m pip install .
           python -m pip install $(grep -iv bibtex doc/requirements.txt)
@@ -64,10 +64,7 @@ jobs:
       - name: Build docs ePub
         run: python -m sphinx doc/ doc/_build/epub/ -W -b epub
       - name: Build PDF from LaTeX
-        uses: xu-cheng/latex-action@1.2.1
-        with:
-          root_file: nbsphinx.tex
-          working_directory: doc/_build/latex
+        run: tectonic doc/_build/latex/nbsphinx.tex
       - name: Upload _build folder
         if: always()
         uses: actions/upload-artifact@v1
@@ -95,7 +92,7 @@ jobs:
           conda-channels: conda-forge
       - name: Install dependencies
         run: |
-          conda install -y pandoc librsvg
+          conda install -y pandoc librsvg tectonic
           python -m pip install Sphinx
           python -m pip install .
           python -m pip install -r doc/requirements.txt
@@ -113,11 +110,7 @@ jobs:
       - name: Build docs ePub
         run: python -m sphinx doc/ doc/_build/epub/ -W -b epub
       - name: Build PDF from LaTeX
-        if: matrix.os == 'ubuntu-latest'
-        uses: xu-cheng/latex-action@1.2.1
-        with:
-          root_file: nbsphinx.tex
-          working_directory: doc/_build/latex
+        run: tectonic doc/_build/latex/nbsphinx.tex
       - name: Upload _build folder
         if: always()
         uses: actions/upload-artifact@v1
