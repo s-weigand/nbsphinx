@@ -135,52 +135,10 @@ jobs:
           name: docs-${{ matrix.os }}-py${{ matrix.python-version }}
           path: doc/_build
 
-  test-python2:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macOS-latest]
-
-    steps:
-      - uses: actions/checkout@v1
-      - name: Set up Python 2.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: 2.7
-      - name: Setup conda
-        uses: s-weigand/setup-conda@master
-        with:
-          activate-conda: false
-          conda-channels: conda-forge
-      - name: Install dependencies
-        run: |
-          python -m pip install .
-          conda install -y pandoc librsvg
-          python -m pip install sphinxcontrib-bibtex==0.4.2
-          python -m pip install sphinxcontrib-svg2pdfconverter
-          python -m pip install ipywidgets
-          python -m pip install 'sphinx-copybutton<0.2.6'
-      - name: Show installed dependencies
-        if: always()
-        run: |
-          python --version
-          python -c "import nbsphinx; print 'nbsphinx.__version__==', nbsphinx.__version__"
-          pandoc -v
-          pip freeze
-      - name: Build docs HTML
-        run: |
-          # We don't execute, because the example notebooks use Python 3
-          python -m sphinx doc/ doc/_build/ -W -b html -D nbsphinx_execute=never
-      - name: Upload _build folder
-        uses: actions/upload-artifact@v1
-        with:
-          name: docs-${{ matrix.os }}-py2.7
-          path: doc/_build
-
   deploy:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-    needs: [test-sphinx-versions, test-python3, test-python2]
+    needs: [test-sphinx-versions, test-python3]
     steps:
       - uses: actions/checkout@v1
       - name: Set up Python 3.7
