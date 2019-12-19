@@ -39,7 +39,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Setup conda
-        uses: s-weigand/setup-conda@master
+        uses: s-weigand/setup-conda@v1
         with:
           activate-conda: false
           conda-channels: conda-forge
@@ -58,23 +58,23 @@ jobs:
           pandoc -v
           pip freeze
       - name: Build docs HTML
-        run: python -m sphinx doc/ doc/_build/html/ -W -b html
+        run: python -m sphinx doc/ doc/_build/docs-sphinx${{ matrix.SPHINX }}/html/ -W -b html
       - name: Build docs LaTeX
-        run: python -m sphinx doc/ doc/_build/latex/ -W -b latex
+        run: python -m sphinx doc/ doc/_build/docs-sphinx${{ matrix.SPHINX }}/latex/ -W -b latex
       - name: Build docs ePub
-        run: python -m sphinx doc/ doc/_build/epub/ -W -b epub
+        run: python -m sphinx doc/ doc/_build/docs-sphinx${{ matrix.SPHINX }}/epub/ -W -b epub
       - name: Cache Tectonic Packages
         uses: actions/cache@v1
         with:
           path: ~/.cache/Tectonic
           key: ${{ runner.os }}-tectonic-packages
       - name: Build PDF from LaTeX
-        run: tectonic doc/_build/latex/nbsphinx.tex
+        run: tectonic doc/_build/docs-sphinx${{ matrix.SPHINX }}/latex/nbsphinx.tex
       - name: Upload _build folder
         if: always()
         uses: actions/upload-artifact@v1
         with:
-          name: docs-sphinx${{ matrix.SPHINX }}
+          name: docs
           path: doc/_build
 
   test-python3:
@@ -91,7 +91,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Setup conda
-        uses: s-weigand/setup-conda@master
+        uses: s-weigand/setup-conda@v1
         with:
           activate-conda: false
           conda-channels: conda-forge
@@ -109,11 +109,11 @@ jobs:
           pandoc -v
           pip freeze
       - name: Build docs HTML
-        run: python -m sphinx doc/ doc/_build/html/ -W -b html
+        run: python -m sphinx doc/ doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}/html/ -W -b html
       - name: Build docs LaTeX
-        run: python -m sphinx doc/ doc/_build/latex/ -W -b latex
+        run: python -m sphinx doc/ doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}/latex/ -W -b latex
       - name: Build docs ePub
-        run: python -m sphinx doc/ doc/_build/epub/ -W -b epub
+        run: python -m sphinx doc/ doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}/epub/ -W -b epub
       - name: Cache Tectonic Packages Linux
         if: runner.os == 'Linux'
         uses: actions/cache@v1
@@ -127,12 +127,12 @@ jobs:
           path: ~/Library/Caches/Tectonic
           key: ${{ runner.os }}-tectonic-packages
       - name: Build PDF from LaTeX
-        run: tectonic doc/_build/latex/nbsphinx.tex
+        run: tectonic doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}/latex/nbsphinx.tex
       - name: Upload _build folder
         if: always()
         uses: actions/upload-artifact@v1
         with:
-          name: docs-${{ matrix.os }}-py${{ matrix.python-version }}
+          name: docs
           path: doc/_build
 
   deploy:
