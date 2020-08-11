@@ -1,0 +1,4 @@
+*	text=lf
+*.bat	text eol=crlf
+
+doc/gallery/ipython_kernel_config.py	symlink=file
