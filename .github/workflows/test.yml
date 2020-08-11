@@ -26,25 +26,16 @@ jobs:
       NOT_NITPICKY: ${{ matrix.NOT_NITPICKY }}
     strategy:
       matrix:
-        SPHINX:
-          [
-            "==1.8.1",
-            "==1.8.5",
-            "==2.0.0",
-            "==2.2.0",
-            "==2.4.0",
-            "==3.0.0",
-            "==3.1.0",
-          ]
+        SPHINX: ["1.8.1", "1.8.5", "2.0.0", "2.2.0", "2.4.0", "3.0.0", "3.1.0"]
         NOT_NITPICKY: ["-Dnitpicky=0"]
         include:
-          - SPHINX: "==1.8.1"
+          - SPHINX: "1.8.1"
             BIBTEX: "==0.4.2"
-          - SPHINX: "==1.8.5"
+          - SPHINX: "1.8.5"
             BIBTEX: "==0.4.2"
-          - SPHINX: "==3.0.0"
+          - SPHINX: "3.0.0"
             NOT_NITPICKY: ""
-          - SPHINX: "==3.1.0"
+          - SPHINX: "3.1.0"
             NOT_NITPICKY: ""
 
     steps:
@@ -61,7 +52,7 @@ jobs:
       - name: Install dependencies
         run: |
           conda install -y pandoc librsvg tectonic
-          python -m pip install Sphinx$SPHINX
+          python -m pip install Sphinx==$SPHINX
           python -m pip install .
           python -m pip install $(grep -iv bibtex doc/requirements.txt)
           python -m pip install sphinxcontrib-bibtex$BIBTEX
@@ -94,27 +85,19 @@ jobs:
 
   test-python-versions:
     runs-on: ${{ matrix.os }}
+    env:
+      SUPPRESS_SELECTED: "-Dnitpicky=0,suppress_warnings=git.too_shallow"
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-        python-version: [3.5, 3.6, 3.7, 3.8, "pypy3"]
-        exclude:
-          - os: macos-latest
-            python-version: 3.5
-          - os: windows-latest
-            python-version: 3.5
-          - os: macos-latest
-            python-version: 3.6
-          - os: windows-latest
-            python-version: 3.6
-          - os: macos-latest
-            python-version: 3.7
-          - os: windows-latest
-            python-version: 3.7
-          - os: macos-latest
-            python-version: "pypy3"
-          - os: windows-latest
-            python-version: "pypy3"
+        os: [ubuntu-latest]
+        python-version: [3.5, 3.6, 3.7, "pypy3"]
+        include:
+          - python-version: 3.8
+            os: ubuntu-latest
+          - python-version: 3.8
+            os: macos-latest
+          - python-version: 3.8
+            os: windows-latest
 
     steps:
       - uses: actions/checkout@v2
@@ -141,11 +124,11 @@ jobs:
           pandoc -v
           pip freeze
       - name: Build docs HTML
-        run: python -m sphinx doc/ doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}/html/ -W -b html
+        run: python -m sphinx doc/ doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}/html/ -W -Dnitpicky=0 -Dsuppress_warnings=git.too_shallow -b html
       - name: Build docs LaTeX
-        run: python -m sphinx doc/ doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}/latex/ -W -b latex
+        run: python -m sphinx doc/ doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}/latex/ -W -Dnitpicky=0 -Dsuppress_warnings=git.too_shallow -b latex
       - name: Build docs ePub
-        run: python -m sphinx doc/ doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}/epub/ -W -b epub
+        run: python -m sphinx doc/ doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}/epub/ -W -Dnitpicky=0 -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
       - name: Cache Tectonic Packages Linux
         if: runner.os == 'Linux'
         uses: actions/cache@v1
