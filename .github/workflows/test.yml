@@ -23,14 +23,29 @@ jobs:
     env:
       SPHINX: ${{ matrix.SPHINX }}
       BIBTEX: ${{ matrix.BIBTEX }}
+      NOT_NITPICKY: ${{ matrix.NOT_NITPICKY }}
     strategy:
       matrix:
-        SPHINX: ["==1.8.0", "==1.8.5", "==2.0.0", "==2.1.0", "==2.2.0"]
+        SPHINX:
+          [
+            "==1.8.1",
+            "==1.8.5",
+            "==2.0.0",
+            "==2.2.0",
+            "==2.4.0",
+            "==3.0.0",
+            "==3.1.0",
+          ]
+        NOT_NITPICKY: ["-Dnitpicky=0"]
         include:
-          - SPHINX: "==1.8.0"
+          - SPHINX: "==1.8.1"
             BIBTEX: "==0.4.2"
           - SPHINX: "==1.8.5"
             BIBTEX: "==0.4.2"
+          - SPHINX: "==3.0.0"
+            NOT_NITPICKY: ""
+          - SPHINX: "==3.1.0"
+            NOT_NITPICKY: ""
 
     steps:
       - uses: actions/checkout@v2
@@ -58,11 +73,11 @@ jobs:
           pandoc -v
           pip freeze
       - name: Build docs HTML
-        run: python -m sphinx doc/ doc/_build/docs-sphinx${{ matrix.SPHINX }}/html/ -W -b html
+        run: python -m sphinx doc/ doc/_build/docs-sphinx${{ matrix.SPHINX }}/html/ -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b html
       - name: Build docs LaTeX
-        run: python -m sphinx doc/ doc/_build/docs-sphinx${{ matrix.SPHINX }}/latex/ -W -b latex
+        run: python -m sphinx doc/ doc/_build/docs-sphinx${{ matrix.SPHINX }}/latex/ -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b latex
       - name: Build docs ePub
-        run: python -m sphinx doc/ doc/_build/docs-sphinx${{ matrix.SPHINX }}/epub/ -W -b epub
+        run: python -m sphinx doc/ doc/_build/docs-sphinx${{ matrix.SPHINX }}/epub/ -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
       - name: Cache Tectonic Packages
         uses: actions/cache@v1
         with:
@@ -72,17 +87,22 @@ jobs:
         run: tectonic doc/_build/docs-sphinx${{ matrix.SPHINX }}/latex/nbsphinx.tex
       - name: Upload _build folder
         if: always()
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: docs
           path: doc/_build
 
-  test-python3:
+  test-python-versions:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest]
-        python-version: [3.5, 3.6, 3.7, 3.8]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        python-version: [3.5, 3.6, 3.7, 3.8, "pypy3"]
+        exclude:
+          - os: macos-latest
+            python-version: [3.5, 3.6, 3.7, "pypy3"]
+          - os: windows-latest
+            python-version: [3.5, 3.6, 3.7, "pypy3"]
 
     steps:
       - uses: actions/checkout@v2
@@ -126,11 +146,17 @@ jobs:
         with:
           path: ~/Library/Caches/Tectonic
           key: ${{ runner.os }}-tectonic-packages
+      # - name: Cache Tectonic Packages Windows
+      #   if: runner.os == 'windows-latest'
+      #   uses: actions/cache@v1
+      #   with:
+      #     path: ~/Library/Caches/Tectonic
+      #     key: ${{ runner.os }}-tectonic-packages
       - name: Build PDF from LaTeX
         run: tectonic doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}/latex/nbsphinx.tex
       - name: Upload _build folder
         if: always()
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: docs
           path: doc/_build
@@ -138,16 +164,16 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-    needs: [test-sphinx-versions, test-python3]
+    needs: [test-sphinx-versions, test-python-versions]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.7
+      - name: Set up Python 3.8
         uses: actions/setup-python@v1
         with:
-          python-version: 3.7
+          python-version: 3.8
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip wheel
           pip install -U .
       - name: Build dist
         run: |
