@@ -70,25 +70,26 @@ jobs:
         run: |
           python -m sphinx doc/ _build/html/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b html
           rm -rf _build/html/.doctrees
-          mv _build/* $ARTIFACT_DIR/
+          mv _build/* ${{ env.ARTIFACT_DIR }}/
       - name: Build docs LaTeX
         run: |
           python -m sphinx doc/ _build/latex/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b latex
           rm -rf _build/latex/.doctrees
-          mv _build/* $ARTIFACT_DIR/
+          rm -f _build/latex/_images/python:nbsphinx.svg
+          mv _build/* ${{ env.ARTIFACT_DIR }}/
       - name: Build docs ePub
         run: |
           python -m sphinx doc/ _build/epub/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
           rm -rf _build/epub/.doctrees
           rm -f _build/epub/_images/python:nbsphinx.svg
-          mv _build/* $ARTIFACT_DIR/
+          mv _build/* ${{ env.ARTIFACT_DIR }}/
       - name: Cache Tectonic Packages
         uses: actions/cache@v1
         with:
           path: ~/.cache/Tectonic
           key: ${{ runner.os }}-tectonic-packages
       - name: Build PDF from LaTeX
-        run: tectonic $ARTIFACT_DIR/latex/nbsphinx.tex
+        run: tectonic ${{ env.ARTIFACT_DIR }}/latex/nbsphinx.tex
       - name: Upload _build folder
         if: always()
         uses: actions/upload-artifact@v2
@@ -129,7 +130,7 @@ jobs:
           python -m pip install Sphinx
           python -m pip install .
           python -m pip install -r doc/requirements.txt
-          mkdir -p $ARTIFACT_DIR
+          mkdir -p ${{ env.ARTIFACT_DIR }}
       - name: Show installed dependencies
         if: always()
         run: |
@@ -141,18 +142,18 @@ jobs:
         run: |
           python -m sphinx doc/ _build/html/ -a -W -Dsuppress_warnings=git.too_shallow -b html
           rm -rf _build/html/.doctrees
-          mv _build/* $ARTIFACT_DIR/
+          mv _build/* ${{ env.ARTIFACT_DIR }}/
       - name: Build docs LaTeX
         run: |
           python -m sphinx doc/ _build/latex/ -a -W -Dsuppress_warnings=git.too_shallow -b latex
           rm -rf _build/latex/.doctrees
-          mv _build/* $ARTIFACT_DIR/
+          mv _build/* ${{ env.ARTIFACT_DIR }}/
       - name: Build docs ePub
         run: |
           python -m sphinx doc/ _build/epub/ -a -W -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
           rm -rf _build/epub/.doctrees
-          rm -f _build/epub/_images/python:nbsphinx.svg
-          mv _build/* $ARTIFACT_DIR/
+          # rm -f _build/epub/_images/python:nbsphinx.svg
+          mv _build/* ${{ env.ARTIFACT_DIR }}/
       - name: Cache Tectonic Packages Linux
         if: runner.os == 'Linux'
         uses: actions/cache@v1
