@@ -66,11 +66,11 @@ jobs:
           pandoc -v
           pip freeze
       - name: Build docs HTML
-        run: python -m sphinx doc/ $BASE_OUT_DIR/html -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b html
+        run: python -m sphinx doc/ $BASE_OUT_DIR/html -E -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b html
       - name: Build docs LaTeX
-        run: python -m sphinx doc/ $BASE_OUT_DIR/latex -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b latex
+        run: python -m sphinx doc/ $BASE_OUT_DIR/latex -E -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b latex
       - name: Build docs ePub
-        run: python -m sphinx doc/ $BASE_OUT_DIR/epub -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
+        run: python -m sphinx doc/ $BASE_OUT_DIR/epub -E -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
       - name: Cache Tectonic Packages
         uses: actions/cache@v1
         with:
@@ -126,11 +126,11 @@ jobs:
           pandoc -v
           pip freeze
       - name: Build docs HTML
-        run: python -m sphinx doc/ $BASE_OUT_DIR/html -W -Dnitpicky=0 -Dsuppress_warnings=git.too_shallow -b html
+        run: python -m sphinx doc/ $BASE_OUT_DIR/html -E -W -Dnitpicky=0 -Dsuppress_warnings=git.too_shallow -b html
       - name: Build docs LaTeX
-        run: python -m sphinx doc/ $BASE_OUT_DIR/latex -W -Dnitpicky=0 -Dsuppress_warnings=git.too_shallow -b latex
+        run: python -m sphinx doc/ $BASE_OUT_DIR/latex -E -W -Dnitpicky=0 -Dsuppress_warnings=git.too_shallow -b latex
       - name: Build docs ePub
-        run: python -m sphinx doc/ $BASE_OUT_DIR/epub -W -Dnitpicky=0 -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
+        run: python -m sphinx doc/ $BASE_OUT_DIR/epub -E -W -Dnitpicky=0 -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
       - name: Cache Tectonic Packages Linux
         if: runner.os == 'Linux'
         uses: actions/cache@v1
