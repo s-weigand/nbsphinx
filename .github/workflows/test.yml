@@ -54,6 +54,7 @@ jobs:
       - name: Install dependencies
         run: |
           conda install -y pandoc librsvg tectonic
+          python -m pip install -U pip wheel
           python -m pip install Sphinx==$SPHINX
           python -m pip install .
           python -m pip install $(grep -iv bibtex doc/requirements.txt)
@@ -128,6 +129,7 @@ jobs:
       - name: Install dependencies and create artifact folder
         run: |
           conda install -y pandoc librsvg tectonic
+          python -m pip install -U pip wheel
           python -m pip install Sphinx
           python -m pip install .
           python -m pip install -r doc/requirements.txt
