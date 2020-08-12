@@ -24,7 +24,7 @@ jobs:
       SPHINX: ${{ matrix.SPHINX }}
       BIBTEX: ${{ matrix.BIBTEX }}
       NOT_NITPICKY: ${{ matrix.NOT_NITPICKY }}
-      BASE_OUT_DIR: doc/_build/docs-sphinx${{ matrix.SPHINX }}
+      ARTIFACT_DIR: artifact_upload/docs-sphinx${{ matrix.SPHINX }}
 
     strategy:
       matrix:
@@ -58,43 +58,48 @@ jobs:
           python -m pip install .
           python -m pip install $(grep -iv bibtex doc/requirements.txt)
           python -m pip install sphinxcontrib-bibtex$BIBTEX
-      - name: Show installed dependencies
+      - name: Show installed dependencies and create artifact folder
         if: always()
         run: |
           python --version
           python -c "import nbsphinx; print('nbsphinx.__version__==', nbsphinx.__version__)"
           pandoc -v
           pip freeze
+          mkdir -p $ARTIFACT_DIR
       - name: Build docs HTML
         run: |
-          python -m sphinx doc/ $BASE_OUT_DIR/html/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b html
-          rm -rf $BASE_OUT_DIR/html/.doctrees/
+          python -m sphinx doc/ _build/html/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b html
+          rm -rf _build/html/.doctrees
+          mv _build/* $ARTIFACT_DIR/
       - name: Build docs LaTeX
         run: |
-          python -m sphinx doc/ $BASE_OUT_DIR/latex/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b latex
-          rm -rf $BASE_OUT_DIR/latex/.doctrees/
+          python -m sphinx doc/ _build/latex/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b latex
+          rm -rf _build/latex/.doctrees
+          mv _build/* $ARTIFACT_DIR/
       - name: Build docs ePub
         run: |
-          python -m sphinx doc/ $BASE_OUT_DIR/epub/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
-          rm -rf $BASE_OUT_DIR/epub/.doctrees/
+          python -m sphinx doc/ _build/epub/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
+          rm -rf _build/epub/.doctrees
+          rm -f _build/epub/_images/python:nbsphinx.svg
+          mv _build/* $ARTIFACT_DIR/
       - name: Cache Tectonic Packages
         uses: actions/cache@v1
         with:
           path: ~/.cache/Tectonic
           key: ${{ runner.os }}-tectonic-packages
       - name: Build PDF from LaTeX
-        run: tectonic doc/_build/docs-sphinx${{ matrix.SPHINX }}/latex/nbsphinx.tex
+        run: tectonic $ARTIFACT_DIR/latex/nbsphinx.tex
       - name: Upload _build folder
         if: always()
         uses: actions/upload-artifact@v2
         with:
           name: docs
-          path: doc/_build
+          path: ${{ env.ARTIFACT_DIR }}
 
   test-python-versions:
     runs-on: ${{ matrix.os }}
     env:
-      BASE_OUT_DIR: doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}
+      ARTIFACT_DIR: artifact_upload/${{ matrix.os }}-py${{ matrix.python-version }}
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -118,12 +123,13 @@ jobs:
         with:
           activate-conda: false
           conda-channels: conda-forge
-      - name: Install dependencies
+      - name: Install dependencies and create artifact folder
         run: |
           conda install -y pandoc librsvg tectonic
           python -m pip install Sphinx
           python -m pip install .
           python -m pip install -r doc/requirements.txt
+          mkdir -p $ARTIFACT_DIR
       - name: Show installed dependencies
         if: always()
         run: |
@@ -133,16 +139,20 @@ jobs:
           pip freeze
       - name: Build docs HTML
         run: |
-          python -m sphinx doc/ $BASE_OUT_DIR/html/ -a -W -Dsuppress_warnings=git.too_shallow -b html
-          rm -rf $BASE_OUT_DIR/html/.doctrees/
+          python -m sphinx doc/ _build/html/ -a -W -Dsuppress_warnings=git.too_shallow -b html
+          rm -rf _build/html/.doctrees
+          mv _build/* $ARTIFACT_DIR/
       - name: Build docs LaTeX
         run: |
-          python -m sphinx doc/ $BASE_OUT_DIR/latex/ -a -W -Dsuppress_warnings=git.too_shallow -b latex
-          rm -rf $BASE_OUT_DIR/latex/.doctrees/
+          python -m sphinx doc/ _build/latex/ -a -W -Dsuppress_warnings=git.too_shallow -b latex
+          rm -rf _build/latex/.doctrees
+          mv _build/* $ARTIFACT_DIR/
       - name: Build docs ePub
         run: |
-          python -m sphinx doc/ $BASE_OUT_DIR/epub/ -a -W -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
-          rm -rf $BASE_OUT_DIR/epub/.doctrees/
+          python -m sphinx doc/ _build/epub/ -a -W -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
+          rm -rf _build/epub/.doctrees
+          rm -f _build/epub/_images/python:nbsphinx.svg
+          mv _build/* $ARTIFACT_DIR/
       - name: Cache Tectonic Packages Linux
         if: runner.os == 'Linux'
         uses: actions/cache@v1
@@ -162,13 +172,13 @@ jobs:
       #     path: ~/Library/Caches/Tectonic
       #     key: ${{ runner.os }}-tectonic-packages
       - name: Build PDF from LaTeX
-        run: tectonic doc/_build/${{ matrix.os }}-py${{ matrix.python-version }}/latex/nbsphinx.tex
+        run: tectonic $ARTIFACT_DIR/latex/nbsphinx.tex
       - name: Upload _build folder
         if: always()
         uses: actions/upload-artifact@v2
         with:
           name: docs
-          path: doc/_build
+          path: ${{ env.ARTIFACT_DIR }}
 
   deploy:
     runs-on: ubuntu-latest
