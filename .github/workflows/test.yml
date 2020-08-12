@@ -75,7 +75,6 @@ jobs:
         run: |
           python -m sphinx doc/ _build/latex/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b latex
           rm -rf _build/latex/.doctrees
-          rm -f _build/latex/_images/python:nbsphinx.svg
           mv _build/* ${{ env.ARTIFACT_DIR }}/
       - name: Build docs ePub
         run: |
@@ -89,7 +88,9 @@ jobs:
           path: ~/.cache/Tectonic
           key: ${{ runner.os }}-tectonic-packages
       - name: Build PDF from LaTeX
-        run: tectonic ${{ env.ARTIFACT_DIR }}/latex/nbsphinx.tex
+        run: |
+          tectonic ${{ env.ARTIFACT_DIR }}/latex/nbsphinx.tex
+          rm -f ${{ env.ARTIFACT_DIR }}/latex/python:nbsphinx.pdf
       - name: Upload _build folder
         if: always()
         uses: actions/upload-artifact@v2
@@ -110,8 +111,8 @@ jobs:
             os: ubuntu-latest
           - python-version: 3.8
             os: macos-latest
-          - python-version: 3.8
-            os: windows-latest
+          # - python-version: 3.8
+          #   os: windows-latest
 
     steps:
       - uses: actions/checkout@v2
@@ -152,7 +153,6 @@ jobs:
         run: |
           python -m sphinx doc/ _build/epub/ -a -W -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
           rm -rf _build/epub/.doctrees
-          # rm -f _build/epub/_images/python:nbsphinx.svg
           mv _build/* ${{ env.ARTIFACT_DIR }}/
       - name: Cache Tectonic Packages Linux
         if: runner.os == 'Linux'
