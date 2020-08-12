@@ -66,11 +66,17 @@ jobs:
           pandoc -v
           pip freeze
       - name: Build docs HTML
-        run: python -m sphinx doc/ $BASE_OUT_DIR/html/ -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b html
+        run: |
+          python -m sphinx doc/ $BASE_OUT_DIR/html/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b html
+          rm -rf $BASE_OUT_DIR/html/.doctrees/
       - name: Build docs LaTeX
-        run: python -m sphinx doc/ $BASE_OUT_DIR/latex/ -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b latex
+        run: |
+          python -m sphinx doc/ $BASE_OUT_DIR/latex/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b latex
+          rm -rf $BASE_OUT_DIR/latex/.doctrees/
       - name: Build docs ePub
-        run: python -m sphinx doc/ $BASE_OUT_DIR/epub/ -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
+        run: |
+          python -m sphinx doc/ $BASE_OUT_DIR/epub/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
+          rm -rf $BASE_OUT_DIR/epub/.doctrees/
       - name: Cache Tectonic Packages
         uses: actions/cache@v1
         with:
@@ -126,11 +132,17 @@ jobs:
           pandoc -v
           pip freeze
       - name: Build docs HTML
-        run: python -m sphinx doc/ $BASE_OUT_DIR/html/ -W -Dsuppress_warnings=git.too_shallow -b html
+        run: |
+          python -m sphinx doc/ $BASE_OUT_DIR/html/ -a -W -Dsuppress_warnings=git.too_shallow -b html
+          rm -rf $BASE_OUT_DIR/html/.doctrees/
       - name: Build docs LaTeX
-        run: python -m sphinx doc/ $BASE_OUT_DIR/latex/ -W -Dsuppress_warnings=git.too_shallow -b latex
+        run: |
+          python -m sphinx doc/ $BASE_OUT_DIR/latex/ -a -W -Dsuppress_warnings=git.too_shallow -b latex
+          rm -rf $BASE_OUT_DIR/latex/.doctrees/
       - name: Build docs ePub
-        run: python -m sphinx doc/ $BASE_OUT_DIR/epub/ -W -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
+        run: |
+          python -m sphinx doc/ $BASE_OUT_DIR/epub/ -a -W -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
+          rm -rf $BASE_OUT_DIR/epub/.doctrees/
       - name: Cache Tectonic Packages Linux
         if: runner.os == 'Linux'
         uses: actions/cache@v1
