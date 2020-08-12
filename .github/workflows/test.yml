@@ -96,7 +96,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: docs
-          path: ${{ env.ARTIFACT_DIR }}
+          path: artifact_upload
 
   test-python-versions:
     runs-on: ${{ matrix.os }}
@@ -179,7 +179,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: docs
-          path: ${{ env.ARTIFACT_DIR }}
+          path: artifact_upload
 
   deploy:
     runs-on: ubuntu-latest
