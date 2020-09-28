@@ -132,7 +132,7 @@ jobs:
           python -m pip install -U pip wheel
           python -m pip install Sphinx
           python -m pip install .
-          python -m pip install -r doc/requirements.txt
+          python -m pip install --prefer-binary -r doc/requirements.txt
           mkdir -p ${{ env.ARTIFACT_DIR }}
       - name: Show installed dependencies
         if: always()
