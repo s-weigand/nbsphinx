@@ -184,7 +184,9 @@ jobs:
           path: "%LOCALAPPDATA%/TectonicProject/Tectonic"
           key: ${{ runner.os }}-tectonic-packages
       - name: Build PDF from LaTeX
-        run: tectonic $ARTIFACT_DIR/latex/nbsphinx.tex
+        run: |
+          ls ${{ env.ARTIFACT_DIR }}/latex
+          tectonic ${{ env.ARTIFACT_DIR }}/latex/nbsphinx.tex
       - name: Upload _build folder
         if: always()
         uses: actions/upload-artifact@v2
