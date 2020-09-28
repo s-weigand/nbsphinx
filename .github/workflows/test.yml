@@ -18,86 +18,86 @@ jobs:
   #       run: |
   #         flake8 src
 
-  test-sphinx-versions:
-    runs-on: ubuntu-latest
-    env:
-      SPHINX: ${{ matrix.SPHINX }}
-      BIBTEX: ${{ matrix.BIBTEX }}
-      NOT_NITPICKY: ${{ matrix.NOT_NITPICKY }}
-      ARTIFACT_DIR: artifact_upload/docs-sphinx${{ matrix.SPHINX }}
+  # test-sphinx-versions:
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     SPHINX: ${{ matrix.SPHINX }}
+  #     BIBTEX: ${{ matrix.BIBTEX }}
+  #     NOT_NITPICKY: ${{ matrix.NOT_NITPICKY }}
+  #     ARTIFACT_DIR: artifact_upload/docs-sphinx${{ matrix.SPHINX }}
 
-    strategy:
-      matrix:
-        SPHINX: ["1.8.1", "1.8.5", "2.0.0", "2.2.0", "2.4.0"]
-        NOT_NITPICKY: ["-Dnitpicky=0"]
-        include:
-          - SPHINX: "1.8.1"
-            BIBTEX: "==0.4.2"
-          - SPHINX: "1.8.5"
-            BIBTEX: "==0.4.2"
-          - SPHINX: "3.0.0"
-            NOT_NITPICKY: ""
-          - SPHINX: "3.1.0"
-            NOT_NITPICKY: ""
+  #   strategy:
+  #     matrix:
+  #       SPHINX: ["1.8.1", "1.8.5", "2.0.0", "2.2.0", "2.4.0"]
+  #       NOT_NITPICKY: ["-Dnitpicky=0"]
+  #       include:
+  #         - SPHINX: "1.8.1"
+  #           BIBTEX: "==0.4.2"
+  #         - SPHINX: "1.8.5"
+  #           BIBTEX: "==0.4.2"
+  #         - SPHINX: "3.0.0"
+  #           NOT_NITPICKY: ""
+  #         - SPHINX: "3.1.0"
+  #           NOT_NITPICKY: ""
 
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.8
-      - name: Setup conda
-        uses: s-weigand/setup-conda@v1
-        with:
-          activate-conda: false
-          conda-channels: conda-forge
-      - name: Install dependencies
-        run: |
-          conda install -y pandoc librsvg tectonic
-          python -m pip install -U pip wheel
-          python -m pip install Sphinx==$SPHINX
-          python -m pip install .
-          python -m pip install $(grep -iv bibtex doc/requirements.txt)
-          python -m pip install sphinxcontrib-bibtex$BIBTEX
-      - name: Show installed dependencies and create artifact folder
-        if: always()
-        run: |
-          python --version
-          python -c "import nbsphinx; print('nbsphinx.__version__==', nbsphinx.__version__)"
-          pandoc -v
-          pip freeze
-          mkdir -p $ARTIFACT_DIR
-      - name: Build docs HTML
-        run: |
-          python -m sphinx doc/ _build/html/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b html
-          rm -rf _build/html/.doctrees
-          mv _build/* ${{ env.ARTIFACT_DIR }}/
-      - name: Build docs LaTeX
-        run: |
-          python -m sphinx doc/ _build/latex/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b latex
-          rm -rf _build/latex/.doctrees
-          mv _build/* ${{ env.ARTIFACT_DIR }}/
-      - name: Build docs ePub
-        run: |
-          python -m sphinx doc/ _build/epub/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
-          rm -rf _build/epub/.doctrees
-          rm -f _build/epub/_images/python:nbsphinx.svg
-          mv _build/* ${{ env.ARTIFACT_DIR }}/
-      - name: Cache Tectonic Packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.cache/Tectonic
-          key: ${{ runner.os }}-tectonic-packages
-      - name: Build PDF from LaTeX
-        run: |
-          tectonic ${{ env.ARTIFACT_DIR }}/latex/nbsphinx.tex
-          rm -f ${{ env.ARTIFACT_DIR }}/latex/python:nbsphinx.pdf
-      - name: Upload _build folder
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: docs
-          path: artifact_upload
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Set up Python 3.8
+  #       uses: actions/setup-python@v1
+  #       with:
+  #         python-version: 3.8
+  #     - name: Setup conda
+  #       uses: s-weigand/setup-conda@v1
+  #       with:
+  #         activate-conda: false
+  #         conda-channels: conda-forge
+  #     - name: Install dependencies
+  #       run: |
+  #         conda install -y pandoc librsvg tectonic
+  #         python -m pip install -U pip wheel
+  #         python -m pip install Sphinx==$SPHINX
+  #         python -m pip install .
+  #         python -m pip install $(grep -iv bibtex doc/requirements.txt)
+  #         python -m pip install sphinxcontrib-bibtex$BIBTEX
+  #     - name: Show installed dependencies and create artifact folder
+  #       if: always()
+  #       run: |
+  #         python --version
+  #         python -c "import nbsphinx; print('nbsphinx.__version__==', nbsphinx.__version__)"
+  #         pandoc -v
+  #         pip freeze
+  #         mkdir -p $ARTIFACT_DIR
+  #     - name: Build docs HTML
+  #       run: |
+  #         python -m sphinx doc/ _build/html/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b html
+  #         rm -rf _build/html/.doctrees
+  #         mv _build/* ${{ env.ARTIFACT_DIR }}/
+  #     - name: Build docs LaTeX
+  #       run: |
+  #         python -m sphinx doc/ _build/latex/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow -b latex
+  #         rm -rf _build/latex/.doctrees
+  #         mv _build/* ${{ env.ARTIFACT_DIR }}/
+  #     - name: Build docs ePub
+  #       run: |
+  #         python -m sphinx doc/ _build/epub/ -a -W $NOT_NITPICKY -Dsuppress_warnings=git.too_shallow,epub.unknown_project_files -b epub
+  #         rm -rf _build/epub/.doctrees
+  #         rm -f _build/epub/_images/python:nbsphinx.svg
+  #         mv _build/* ${{ env.ARTIFACT_DIR }}/
+  #     - name: Cache Tectonic Packages
+  #       uses: actions/cache@v1
+  #       with:
+  #         path: ~/.cache/Tectonic
+  #         key: ${{ runner.os }}-tectonic-packages
+  #     - name: Build PDF from LaTeX
+  #       run: |
+  #         tectonic ${{ env.ARTIFACT_DIR }}/latex/nbsphinx.tex
+  #         rm -f ${{ env.ARTIFACT_DIR }}/latex/python:nbsphinx.pdf
+  #     - name: Upload _build folder
+  #       if: always()
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         name: docs
+  #         path: artifact_upload
 
   test-python-versions:
     runs-on: ${{ matrix.os }}
@@ -106,7 +106,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.5 , 3.6, 3.7, "pypy3"]
+        python-version: [3.5] # , 3.6, 3.7] # , "pypy3"]
         include:
           - python-version: 3.8
             os: ubuntu-latest
