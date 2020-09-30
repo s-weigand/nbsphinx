@@ -23,9 +23,8 @@
 https://nbsphinx.readthedocs.io/
 
 """
-__version__ = '0.7.1'
+__version__ = "0.7.1"
 
-import asyncio
 import collections.abc
 import copy
 import html
@@ -51,11 +50,11 @@ import sphinx.transforms.post_transforms.images
 from sphinx.util.matching import patmatch
 import traitlets
 
-if (
-    sys.version_info[0] == 3
-    and sys.version_info[1] >= 8
-    and sys.platform.startswith("win")
-):
+
+if sys.version_info >= (3, 8) and sys.platform == ("win32"):
+    # See: https://github.com/jupyter/jupyter_client/issues/583
+    import asyncio
+
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 _ipynbversion = 4
@@ -66,26 +65,26 @@ _BROKEN_THUMBNAIL = object()
 
 # See nbconvert/exporters/html.py:
 DISPLAY_DATA_PRIORITY_HTML = (
-    'application/vnd.jupyter.widget-state+json',
-    'application/vnd.jupyter.widget-view+json',
-    'application/javascript',
-    'text/html',
-    'text/markdown',
-    'image/svg+xml',
-    'text/latex',
-    'image/png',
-    'image/jpeg',
-    'text/plain',
+    "application/vnd.jupyter.widget-state+json",
+    "application/vnd.jupyter.widget-view+json",
+    "application/javascript",
+    "text/html",
+    "text/markdown",
+    "image/svg+xml",
+    "text/latex",
+    "image/png",
+    "image/jpeg",
+    "text/plain",
 )
 # See nbconvert/exporters/latex.py:
 DISPLAY_DATA_PRIORITY_LATEX = (
-    'text/latex',
-    'application/pdf',
-    'image/png',
-    'image/jpeg',
-    'image/svg+xml',
-    'text/markdown',
-    'text/plain',
+    "text/latex",
+    "application/pdf",
+    "image/png",
+    "image/jpeg",
+    "image/svg+xml",
+    "text/markdown",
+    "text/plain",
 )
 
 # The default rst template name is changing in nbconvert 6, so we substitute
@@ -286,7 +285,9 @@ RST_TEMPLATE = """
 {% endif %}
 {{ super() }}
 {% endblock footer %}
-""".replace('__RST_DEFAULT_TEMPLATE__', nbconvert.RSTExporter().template_file)
+""".replace(
+    "__RST_DEFAULT_TEMPLATE__", nbconvert.RSTExporter().template_file
+)
 
 
 LATEX_PREAMBLE = r"""
@@ -737,8 +738,15 @@ class Exporter(nbconvert.RSTExporter):
 
     """
 
-    def __init__(self, execute='auto', kernel_name='', execute_arguments=[],
-                 allow_errors=False, timeout=None, codecell_lexer='none'):
+    def __init__(
+        self,
+        execute="auto",
+        kernel_name="",
+        execute_arguments=[],
+        allow_errors=False,
+        timeout=None,
+        codecell_lexer="none",
+    ):
         """Initialize the Exporter."""
 
         # NB: The following stateful Jinja filters are a hack until
@@ -750,18 +758,21 @@ class Exporter(nbconvert.RSTExporter):
         attachment_storage = []
 
         def save_attachments(cell):
-            for filename, bundle in cell.get('attachments', {}).items():
+            for filename, bundle in cell.get("attachments", {}).items():
                 attachment_storage.append((filename, bundle))
 
         def replace_attachments(text):
             for filename, bundle in attachment_storage:
                 # For now, this works only if there is a single MIME bundle
-                (mime_type, data), = bundle.items()
+                ((mime_type, data),) = bundle.items()
                 text = re.sub(
-                    r'^(\s*\.\. (\|[^|]*\| image|figure)::) attachment:{0}$'
-                        .format(filename),
-                    r'\1 data:{0};base64,{1}'.format(mime_type, data),
-                    text, flags=re.MULTILINE)
+                    r"^(\s*\.\. (\|[^|]*\| image|figure)::) attachment:{0}$".format(
+                        filename
+                    ),
+                    r"\1 data:{0};base64,{1}".format(mime_type, data),
+                    text,
+                    flags=re.MULTILINE,
+                )
             del attachment_storage[:]
             return text
 
@@ -771,26 +782,30 @@ class Exporter(nbconvert.RSTExporter):
         self._allow_errors = allow_errors
         self._timeout = timeout
         self._codecell_lexer = codecell_lexer
-        loader = jinja2.DictLoader({'nbsphinx-rst.tpl': RST_TEMPLATE})
+        loader = jinja2.DictLoader({"nbsphinx-rst.tpl": RST_TEMPLATE})
         super(Exporter, self).__init__(
-            template_file='nbsphinx-rst.tpl', extra_loaders=[loader],
-            config=traitlets.config.Config({
-                'HighlightMagicsPreprocessor': {'enabled': True},
-                # Work around https://github.com/jupyter/nbconvert/issues/720:
-                'RegexRemovePreprocessor': {'enabled': False},
-            }),
+            template_file="nbsphinx-rst.tpl",
+            extra_loaders=[loader],
+            config=traitlets.config.Config(
+                {
+                    "HighlightMagicsPreprocessor": {"enabled": True},
+                    # Work around https://github.com/jupyter/nbconvert/issues/720:
+                    "RegexRemovePreprocessor": {"enabled": False},
+                }
+            ),
             filters={
-                'convert_pandoc': convert_pandoc,
-                'markdown2rst': markdown2rst,
-                'get_empty_lines': _get_empty_lines,
-                'extract_gallery_or_toctree': _extract_gallery_or_toctree,
-                'save_attachments': save_attachments,
-                'replace_attachments': replace_attachments,
-                'get_output_type': _get_output_type,
-                'json_dumps': json.dumps,
-                'basename': os.path.basename,
-                'dirname': os.path.dirname,
-            })
+                "convert_pandoc": convert_pandoc,
+                "markdown2rst": markdown2rst,
+                "get_empty_lines": _get_empty_lines,
+                "extract_gallery_or_toctree": _extract_gallery_or_toctree,
+                "save_attachments": save_attachments,
+                "replace_attachments": replace_attachments,
+                "get_output_type": _get_output_type,
+                "json_dumps": json.dumps,
+                "basename": os.path.basename,
+                "dirname": os.path.dirname,
+            },
+        )
 
     def from_notebook_node(self, nb, resources=None, **kw):
         nb = copy.deepcopy(nb)
@@ -799,118 +814,138 @@ class Exporter(nbconvert.RSTExporter):
         else:
             resources = copy.deepcopy(resources)
         # Set default codecell lexer
-        resources['codecell_lexer'] = self._codecell_lexer
+        resources["codecell_lexer"] = self._codecell_lexer
 
-        nbsphinx_metadata = nb.metadata.get('nbsphinx', {})
+        nbsphinx_metadata = nb.metadata.get("nbsphinx", {})
 
-        execute = nbsphinx_metadata.get('execute', self._execute)
-        if execute not in ('always', 'never', 'auto'):
-            raise ValueError('invalid execute option: {!r}'.format(execute))
+        execute = nbsphinx_metadata.get("execute", self._execute)
+        if execute not in ("always", "never", "auto"):
+            raise ValueError("invalid execute option: {!r}".format(execute))
         auto_execute = (
-            execute == 'auto' and
+            execute == "auto"
+            and
             # At least one code cell actually containing source code:
-            any(c.source for c in nb.cells if c.cell_type == 'code') and
+            any(c.source for c in nb.cells if c.cell_type == "code")
+            and
             # No outputs, not even a prompt number:
-            not any(c.get('outputs') or c.get('execution_count')
-                    for c in nb.cells if c.cell_type == 'code')
+            not any(
+                c.get("outputs") or c.get("execution_count")
+                for c in nb.cells
+                if c.cell_type == "code"
+            )
         )
-        if auto_execute or execute == 'always':
-            allow_errors = nbsphinx_metadata.get(
-                'allow_errors', self._allow_errors)
-            timeout = nbsphinx_metadata.get('timeout', self._timeout)
+        if auto_execute or execute == "always":
+            allow_errors = nbsphinx_metadata.get("allow_errors", self._allow_errors)
+            timeout = nbsphinx_metadata.get("timeout", self._timeout)
             pp = nbconvert.preprocessors.ExecutePreprocessor(
                 kernel_name=self._kernel_name,
                 extra_arguments=self._execute_arguments,
-                allow_errors=allow_errors, timeout=timeout)
+                allow_errors=allow_errors,
+                timeout=timeout,
+            )
             nb, resources = pp.preprocess(nb, resources)
 
-        if 'nbsphinx_save_notebook' in resources:
+        if "nbsphinx_save_notebook" in resources:
             # Save *executed* notebook *before* the Exporter can change it:
-            nbformat.write(nb, resources['nbsphinx_save_notebook'])
+            nbformat.write(nb, resources["nbsphinx_save_notebook"])
 
         # Call into RSTExporter
         rststr, resources = super(Exporter, self).from_notebook_node(
-            nb, resources, **kw)
+            nb, resources, **kw
+        )
 
-        orphan = nbsphinx_metadata.get('orphan', False)
+        orphan = nbsphinx_metadata.get("orphan", False)
         if orphan is True:
-            resources['nbsphinx_orphan'] = True
+            resources["nbsphinx_orphan"] = True
         elif orphan is not False:
-            raise ValueError('invalid orphan option: {!r}'.format(orphan))
+            raise ValueError("invalid orphan option: {!r}".format(orphan))
 
-        if 'application/vnd.jupyter.widget-state+json' in nb.metadata.get(
-                'widgets', {}):
-            resources['nbsphinx_widgets'] = True
+        if "application/vnd.jupyter.widget-state+json" in nb.metadata.get(
+            "widgets", {}
+        ):
+            resources["nbsphinx_widgets"] = True
 
         thumbnail = {}
 
         def warning(msg, *args):
             logger.warning(
-                '"nbsphinx-thumbnail": ' + msg, *args,
-                location=resources.get('nbsphinx_docname'),
-                type='nbsphinx', subtype='thumbnail')
-            thumbnail['filename'] = _BROKEN_THUMBNAIL
+                '"nbsphinx-thumbnail": ' + msg,
+                *args,
+                location=resources.get("nbsphinx_docname"),
+                type="nbsphinx",
+                subtype="thumbnail"
+            )
+            thumbnail["filename"] = _BROKEN_THUMBNAIL
 
         for cell_index, cell in enumerate(nb.cells):
-            if 'nbsphinx-thumbnail' in cell.metadata:
-                data = cell.metadata['nbsphinx-thumbnail'].copy()
-                output_index = data.pop('output-index', -1)
-                tooltip = data.pop('tooltip', '')
+            if "nbsphinx-thumbnail" in cell.metadata:
+                data = cell.metadata["nbsphinx-thumbnail"].copy()
+                output_index = data.pop("output-index", -1)
+                tooltip = data.pop("tooltip", "")
                 if data:
-                    warning('Invalid key(s): %s', set(data))
+                    warning("Invalid key(s): %s", set(data))
                     break
-            elif 'nbsphinx-thumbnail' in cell.metadata.get('tags', []):
+            elif "nbsphinx-thumbnail" in cell.metadata.get("tags", []):
                 output_index = -1
-                tooltip = ''
+                tooltip = ""
             else:
                 continue
-            if cell.cell_type != 'code':
-                warning('Only allowed in code cells; cell %s has type "%s"',
-                        cell_index, cell.cell_type)
+            if cell.cell_type != "code":
+                warning(
+                    'Only allowed in code cells; cell %s has type "%s"',
+                    cell_index,
+                    cell.cell_type,
+                )
                 break
             if thumbnail:
-                warning('Only allowed once per notebook')
+                warning("Only allowed once per notebook")
                 break
             if not cell.outputs:
-                warning('No outputs in cell %s', cell_index)
+                warning("No outputs in cell %s", cell_index)
                 break
             if tooltip:
-                thumbnail['tooltip'] = tooltip
+                thumbnail["tooltip"] = tooltip
             if output_index == -1:
                 output_index = len(cell.outputs) - 1
             elif output_index >= len(cell.outputs):
-                warning('Invalid "output-index" in cell %s: %s',
-                        cell_index, output_index)
+                warning(
+                    'Invalid "output-index" in cell %s: %s', cell_index, output_index
+                )
                 break
             out = cell.outputs[output_index]
-            if out.output_type not in {'display_data', 'execute_result'}:
-                warning('Unsupported output type in cell %s/output %s: "%s"',
-                        cell_index, output_index, out.output_type)
+            if out.output_type not in {"display_data", "execute_result"}:
+                warning(
+                    'Unsupported output type in cell %s/output %s: "%s"',
+                    cell_index,
+                    output_index,
+                    out.output_type,
+                )
                 break
 
             for mime_type in DISPLAY_DATA_PRIORITY_HTML:
                 if mime_type not in out.data:
                     continue
-                if mime_type == 'image/svg+xml':
-                    suffix = '.svg'
-                elif mime_type == 'image/png':
-                    suffix = '.png'
-                elif mime_type == 'image/jpeg':
-                    suffix = '.jpg'
+                if mime_type == "image/svg+xml":
+                    suffix = ".svg"
+                elif mime_type == "image/png":
+                    suffix = ".png"
+                elif mime_type == "image/jpeg":
+                    suffix = ".jpg"
                 else:
                     continue
-                thumbnail['filename'] = '{}_{}_{}{}'.format(
-                    resources['unique_key'],
-                    cell_index,
-                    output_index,
-                    suffix,
+                thumbnail["filename"] = "{}_{}_{}{}".format(
+                    resources["unique_key"], cell_index, output_index, suffix,
                 )
                 break
             else:
-                warning('Unsupported MIME type(s) in cell %s/output %s: %s',
-                        cell_index, output_index, set(out.data))
+                warning(
+                    "Unsupported MIME type(s) in cell %s/output %s: %s",
+                    cell_index,
+                    output_index,
+                    set(out.data),
+                )
                 break
-        resources['nbsphinx_thumbnail'] = thumbnail
+        resources["nbsphinx_thumbnail"] = thumbnail
         return rststr, resources
 
 
@@ -923,7 +958,7 @@ class NotebookParser(rst.Parser):
 
     """
 
-    supported = 'jupyter_notebook',
+    supported = ("jupyter_notebook",)
 
     def get_transforms(self):
         """List of transforms for documents parsed by this parser."""
@@ -954,22 +989,22 @@ class NotebookParser(rst.Parser):
 
         """
         env = document.settings.env
-        formats = {
-            '.ipynb': lambda s: nbformat.reads(s, as_version=_ipynbversion)}
+        formats = {".ipynb": lambda s: nbformat.reads(s, as_version=_ipynbversion)}
         formats.update(env.config.nbsphinx_custom_formats)
         srcfile = env.doc2path(env.docname, base=None)
         for format, converter in formats.items():
             if srcfile.endswith(format):
                 break
         else:
-            raise NotebookError(
-                'No converter was found for {!r}'.format(srcfile))
-        if (isinstance(converter, collections.abc.Sequence) and
-                not isinstance(converter, str)):
+            raise NotebookError("No converter was found for {!r}".format(srcfile))
+        if isinstance(converter, collections.abc.Sequence) and not isinstance(
+            converter, str
+        ):
             if len(converter) != 2:
                 raise NotebookError(
-                    'The values of nbsphinx_custom_formats must be '
-                    'either strings or 2-element sequences')
+                    "The values of nbsphinx_custom_formats must be "
+                    "either strings or 2-element sequences"
+                )
             converter, kwargs = converter
         else:
             kwargs = {}
@@ -987,19 +1022,19 @@ class NotebookParser(rst.Parser):
 
         resources = {}
         # Working directory for ExecutePreprocessor
-        resources['metadata'] = {'path': srcdir}
+        resources["metadata"] = {"path": srcdir}
         # Sphinx doesn't accept absolute paths in images etc.
-        resources['output_files_dir'] = os.path.relpath(auxdir, srcdir)
-        resources['unique_key'] = re.sub('[/ ]', '_', env.docname)
-        resources['nbsphinx_docname'] = env.docname
+        resources["output_files_dir"] = os.path.relpath(auxdir, srcdir)
+        resources["unique_key"] = re.sub("[/ ]", "_", env.docname)
+        resources["nbsphinx_docname"] = env.docname
 
         # NB: The source file could have a different suffix
         #     if nbsphinx_custom_formats is used.
-        notebookfile = env.docname + '.ipynb'
+        notebookfile = env.docname + ".ipynb"
         env.nbsphinx_notebooks[env.docname] = notebookfile
         auxfile = os.path.join(auxdir, notebookfile)
         sphinx.util.ensuredir(os.path.dirname(auxfile))
-        resources['nbsphinx_save_notebook'] = auxfile
+        resources["nbsphinx_save_notebook"] = auxfile
 
         exporter = Exporter(
             execute=env.config.nbsphinx_execute,
@@ -1013,56 +1048,67 @@ class NotebookParser(rst.Parser):
         try:
             rststring, resources = exporter.from_notebook_node(nb, resources)
         except nbconvert.preprocessors.execute.CellExecutionError as e:
-            lines = str(e).split('\n')
-            lines[0] = 'CellExecutionError in {}:'.format(
-                env.doc2path(env.docname, base=None))
-            lines.append("You can ignore this error by setting the following "
-                         "in conf.py:\n\n    nbsphinx_allow_errors = True\n")
-            raise NotebookError('\n'.join(lines))
+            lines = str(e).split("\n")
+            lines[0] = "CellExecutionError in {}:".format(
+                env.doc2path(env.docname, base=None)
+            )
+            lines.append(
+                "You can ignore this error by setting the following "
+                "in conf.py:\n\n    nbsphinx_allow_errors = True\n"
+            )
+            raise NotebookError("\n".join(lines))
         except Exception as e:
-            raise NotebookError(type(e).__name__ + ' in ' +
-                                env.doc2path(env.docname, base=None) + ':\n' +
-                                str(e))
+            raise NotebookError(
+                type(e).__name__
+                + " in "
+                + env.doc2path(env.docname, base=None)
+                + ":\n"
+                + str(e)
+            )
 
-        rststring = """
+        rststring = (
+            """
 .. role:: nbsphinx-math(raw)
     :format: latex + html
     :class: math
 
 ..
 
-""" + rststring
+"""
+            + rststring
+        )
 
         # Create additional output files (figures etc.),
         # see nbconvert.writers.FilesWriter.write()
-        for filename, data in resources.get('outputs', {}).items():
+        for filename, data in resources.get("outputs", {}).items():
             dest = os.path.normpath(os.path.join(srcdir, filename))
-            with open(dest, 'wb') as f:
+            with open(dest, "wb") as f:
                 f.write(data)
 
-        if resources.get('nbsphinx_orphan', False):
-            rst.Parser.parse(self, ':orphan:', document)
+        if resources.get("nbsphinx_orphan", False):
+            rst.Parser.parse(self, ":orphan:", document)
         if env.config.nbsphinx_prolog:
             prolog = exporter.environment.from_string(
-                env.config.nbsphinx_prolog).render(env=env)
+                env.config.nbsphinx_prolog
+            ).render(env=env)
             rst.Parser.parse(self, prolog, document)
         rst.Parser.parse(self, rststring, document)
         if env.config.nbsphinx_epilog:
             epilog = exporter.environment.from_string(
-                env.config.nbsphinx_epilog).render(env=env)
+                env.config.nbsphinx_epilog
+            ).render(env=env)
             rst.Parser.parse(self, epilog, document)
 
-        if resources.get('nbsphinx_widgets', False):
+        if resources.get("nbsphinx_widgets", False):
             env.nbsphinx_widgets.add(env.docname)
 
-        env.nbsphinx_thumbnails[env.docname] = resources.get(
-            'nbsphinx_thumbnail', {})
+        env.nbsphinx_thumbnails[env.docname] = resources.get("nbsphinx_thumbnail", {})
 
 
 class NotebookError(sphinx.errors.SphinxError):
     """Error during notebook parsing."""
 
-    category = 'Notebook error'
+    category = "Notebook error"
 
 
 class CodeAreaNode(docutils.nodes.Element):
@@ -1075,23 +1121,23 @@ class FancyOutputNode(docutils.nodes.Element):
 
 def _create_code_nodes(directive):
     """Create nodes for an input or output code cell."""
-    directive.state.document['nbsphinx_include_css'] = True
-    execution_count = directive.options.get('execution-count')
+    directive.state.document["nbsphinx_include_css"] = True
+    execution_count = directive.options.get("execution-count")
     config = directive.state.document.settings.env.config
     if isinstance(directive, NbInput):
-        outer_classes = ['nbinput']
-        if 'no-output' in directive.options:
-            outer_classes.append('nblast')
-        inner_classes = ['input_area']
+        outer_classes = ["nbinput"]
+        if "no-output" in directive.options:
+            outer_classes.append("nblast")
+        inner_classes = ["input_area"]
         prompt_template = config.nbsphinx_input_prompt
         if not execution_count:
-            execution_count = ' '
+            execution_count = " "
     elif isinstance(directive, NbOutput):
-        outer_classes = ['nboutput']
-        if 'more-to-come' not in directive.options:
-            outer_classes.append('nblast')
-        inner_classes = ['output_area']
-        inner_classes.append(directive.options.get('class', ''))
+        outer_classes = ["nboutput"]
+        if "more-to-come" not in directive.options:
+            outer_classes.append("nblast")
+        inner_classes = ["output_area"]
+        inner_classes.append(directive.options.get("class", ""))
         prompt_template = config.nbsphinx_output_prompt
     else:
         assert False
@@ -1100,33 +1146,37 @@ def _create_code_nodes(directive):
     if execution_count:
         prompt = prompt_template % (execution_count,)
         prompt_node = docutils.nodes.literal_block(
-            prompt, prompt, language='none', classes=['prompt'])
+            prompt, prompt, language="none", classes=["prompt"]
+        )
     else:
-        prompt = ''
-        prompt_node = docutils.nodes.container(classes=['prompt', 'empty'])
+        prompt = ""
+        prompt_node = docutils.nodes.container(classes=["prompt", "empty"])
     # NB: Prompts are added manually in LaTeX output
-    outer_node += sphinx.addnodes.only('', prompt_node, expr='html')
+    outer_node += sphinx.addnodes.only("", prompt_node, expr="html")
 
     if isinstance(directive, NbInput):
-        text = '\n'.join(directive.content.data)
+        text = "\n".join(directive.content.data)
         if directive.arguments:
             language = directive.arguments[0]
         else:
-            language = 'none'
+            language = "none"
         inner_node = docutils.nodes.literal_block(
-            text, text, language=language, classes=inner_classes)
+            text, text, language=language, classes=inner_classes
+        )
     else:
         inner_node = docutils.nodes.container(classes=inner_classes)
         sphinx.util.nodes.nested_parse_with_titles(
-            directive.state, directive.content, inner_node)
+            directive.state, directive.content, inner_node
+        )
 
-    if 'fancy' in directive.options:
-        outer_node += FancyOutputNode('', inner_node, prompt=prompt)
+    if "fancy" in directive.options:
+        outer_node += FancyOutputNode("", inner_node, prompt=prompt)
     else:
         codearea_node = CodeAreaNode(
-            '', inner_node, prompt=prompt, stderr='stderr' in inner_classes)
+            "", inner_node, prompt=prompt, stderr="stderr" in inner_classes
+        )
         # See http://stackoverflow.com/q/34050044/.
-        for attr in 'empty-lines-before', 'empty-lines-after':
+        for attr in "empty-lines-before", "empty-lines-after":
             value = directive.options.get(attr, 0)
             if value:
                 codearea_node[attr] = value
@@ -1148,6 +1198,7 @@ class GalleryNode(docutils.nodes.Element):
 
 # See http://docutils.sourceforge.net/docs/howto/rst-directives.html
 
+
 class NbInput(rst.Directive):
     """A notebook input cell with prompt and code area."""
 
@@ -1155,10 +1206,10 @@ class NbInput(rst.Directive):
     optional_arguments = 1  # lexer name
     final_argument_whitespace = False
     option_spec = {
-        'execution-count': rst.directives.positive_int,
-        'empty-lines-before': rst.directives.nonnegative_int,
-        'empty-lines-after': rst.directives.nonnegative_int,
-        'no-output': rst.directives.flag,
+        "execution-count": rst.directives.positive_int,
+        "empty-lines-before": rst.directives.nonnegative_int,
+        "empty-lines-after": rst.directives.nonnegative_int,
+        "no-output": rst.directives.flag,
     }
     has_content = True
 
@@ -1173,10 +1224,10 @@ class NbOutput(rst.Directive):
     required_arguments = 0
     final_argument_whitespace = False
     option_spec = {
-        'execution-count': rst.directives.positive_int,
-        'more-to-come': rst.directives.flag,
-        'fancy': rst.directives.flag,
-        'class': rst.directives.unchanged,
+        "execution-count": rst.directives.positive_int,
+        "more-to-come": rst.directives.flag,
+        "fancy": rst.directives.flag,
+        "class": rst.directives.unchanged,
     }
     has_content = True
 
@@ -1195,7 +1246,7 @@ class _NbAdmonition(rst.Directive):
 
     def run(self):
         """This is called by the reST parser."""
-        node = AdmonitionNode(classes=['admonition', self._class])
+        node = AdmonitionNode(classes=["admonition", self._class])
         self.state.nested_parse(self.content, self.content_offset, node)
         return [node]
 
@@ -1203,13 +1254,13 @@ class _NbAdmonition(rst.Directive):
 class NbInfo(_NbAdmonition):
     """An information box."""
 
-    _class = 'note'
+    _class = "note"
 
 
 class NbWarning(_NbAdmonition):
     """A warning box."""
 
-    _class = 'warning'
+    _class = "warning"
 
 
 class NbGallery(sphinx.directives.other.TocTree):
@@ -1219,8 +1270,8 @@ class NbGallery(sphinx.directives.other.TocTree):
         """Wrap GalleryToc arount toctree."""
         ret = super().run()
         try:
-            toctree_wrapper, = ret
-            toctree, = toctree_wrapper
+            (toctree_wrapper,) = ret
+            (toctree,) = toctree_wrapper
         except ValueError:
             return ret
         if not isinstance(toctree, sphinx.addnodes.toctree):
@@ -1237,13 +1288,12 @@ def convert_pandoc(text, from_format, to_format):
     template was replaced by the new filter function convert_pandoc.
 
     """
-    if from_format != 'markdown' and to_format != 'rst':
-        raise ValueError('Unsupported conversion')
+    if from_format != "markdown" and to_format != "rst":
+        raise ValueError("Unsupported conversion")
     return markdown2rst(text)
 
 
 class CitationParser(html.parser.HTMLParser):
-
     def handle_starttag(self, tag, attrs):
         if self._check_cite(attrs):
             self.starttag = tag
@@ -1256,16 +1306,16 @@ class CitationParser(html.parser.HTMLParser):
 
     def _check_cite(self, attrs):
         for name, value in attrs:
-            if name == 'data-cite':
-                self.cite = ':cite:`' + value + '`'
+            if name == "data-cite":
+                self.cite = ":cite:`" + value + "`"
                 return True
         return False
 
     def reset(self):
         super().reset()
-        self.starttag = ''
-        self.endtag = ''
-        self.cite = ''
+        self.starttag = ""
+        self.endtag = ""
+        self.cite = ""
 
 
 class ImgParser(html.parser.HTMLParser):
@@ -1278,36 +1328,36 @@ class ImgParser(html.parser.HTMLParser):
         self._check_img(tag, attrs)
 
     def _check_img(self, tag, attrs):
-        if tag != 'img':
+        if tag != "img":
             return
         # NB: attrs is a list of pairs
         attrs = dict(attrs)
-        if 'src' not in attrs:
+        if "src" not in attrs:
             return
-        img_path = nbconvert.filters.posix_path(attrs['src'])
-        if img_path.startswith('data'):
+        img_path = nbconvert.filters.posix_path(attrs["src"])
+        if img_path.startswith("data"):
             # Allow multi-line data, see issue #474
-            img_path = img_path.replace('\n', '')
-        lines = ['image:: ' + img_path]
-        indent = ' ' * 4
+            img_path = img_path.replace("\n", "")
+        lines = ["image:: " + img_path]
+        indent = " " * 4
         classes = []
-        if 'class' in attrs:
-            classes.append(attrs['class'])
-        if 'alt' in attrs:
-            lines.append(indent + ':alt: ' + attrs['alt'])
-        if 'width' in attrs:
-            lines.append(indent + ':width: ' + attrs['width'])
-        if 'height' in attrs:
-            lines.append(indent + ':height: ' + attrs['height'])
-        if {'width', 'height'}.intersection(attrs):
-            classes.append('no-scaled-link')
+        if "class" in attrs:
+            classes.append(attrs["class"])
+        if "alt" in attrs:
+            lines.append(indent + ":alt: " + attrs["alt"])
+        if "width" in attrs:
+            lines.append(indent + ":width: " + attrs["width"])
+        if "height" in attrs:
+            lines.append(indent + ":height: " + attrs["height"])
+        if {"width", "height"}.intersection(attrs):
+            classes.append("no-scaled-link")
         if classes:
-            lines.append(indent + ':class: ' + ' '.join(classes))
+            lines.append(indent + ":class: " + " ".join(classes))
 
-        definition = '\n'.join(lines)
+        definition = "\n".join(lines)
         hex_id = uuid.uuid4().hex
-        definition = '.. |' + hex_id + '| ' + definition
-        self.obj = {'t': 'RawInline', 'c': ['rst', '|' + hex_id + '|']}
+        definition = ".. |" + hex_id + "| " + definition
+        self.obj = {"t": "RawInline", "c": ["rst", "|" + hex_id + "|"]}
         self.definition = definition
 
     def reset(self):
@@ -1331,43 +1381,47 @@ def markdown2rst(text):
 
     def parse_citation(obj):
         p = CitationParser()
-        p.feed(obj['c'][1])
+        p.feed(obj["c"][1])
         p.close()
         return p
 
     def parse_img(obj):
         p = ImgParser()
-        p.feed(obj['c'][1])
+        p.feed(obj["c"][1])
         p.close()
         return p
 
     def object_hook(obj):
         if object_hook.open_cite_tag:
-            if obj.get('t') == 'RawInline' and obj['c'][0] == 'html':
+            if obj.get("t") == "RawInline" and obj["c"][0] == "html":
                 p = parse_citation(obj)
                 if p.endtag == object_hook.open_cite_tag:
-                    object_hook.open_cite_tag = ''
-            return {'t': 'Str', 'c': ''}  # Object is replaced by empty string
+                    object_hook.open_cite_tag = ""
+            return {"t": "Str", "c": ""}  # Object is replaced by empty string
 
-        if obj.get('t') == 'RawBlock' and obj['c'][0] == 'latex':
-            obj['t'] = 'Para'
-            obj['c'] = [{
-                't': 'Math',
-                'c': [
-                    {'t': 'DisplayMath', 'c': []},
-                    # Special marker characters are removed below:
-                    '\x0e:nowrap:\x0f\n\n' + obj['c'][1],
-                ]
-            }]
-        elif obj.get('t') == 'RawInline' and obj['c'][0] == 'tex':
-            obj = {'t': 'RawInline',
-                   'c': ['rst', ':nbsphinx-math:`{}`'.format(obj['c'][1])]}
-        elif obj.get('t') == 'RawInline' and obj['c'][0] == 'html':
+        if obj.get("t") == "RawBlock" and obj["c"][0] == "latex":
+            obj["t"] = "Para"
+            obj["c"] = [
+                {
+                    "t": "Math",
+                    "c": [
+                        {"t": "DisplayMath", "c": []},
+                        # Special marker characters are removed below:
+                        "\x0e:nowrap:\x0f\n\n" + obj["c"][1],
+                    ],
+                }
+            ]
+        elif obj.get("t") == "RawInline" and obj["c"][0] == "tex":
+            obj = {
+                "t": "RawInline",
+                "c": ["rst", ":nbsphinx-math:`{}`".format(obj["c"][1])],
+            }
+        elif obj.get("t") == "RawInline" and obj["c"][0] == "html":
             p = parse_citation(obj)
             if p.starttag:
                 object_hook.open_cite_tag = p.starttag
             if p.cite:
-                obj = {'t': 'RawInline', 'c': ['rst', p.cite]}
+                obj = {"t": "RawInline", "c": ["rst", p.cite]}
             if not p.starttag and not p.cite:
                 p = parse_img(obj)
                 if p.obj:
@@ -1375,27 +1429,25 @@ def markdown2rst(text):
                     object_hook.image_definitions.append(p.definition)
         return obj
 
-    object_hook.open_cite_tag = ''
+    object_hook.open_cite_tag = ""
     object_hook.image_definitions = []
 
     def filter_func(text):
         json_data = json.loads(text, object_hook=object_hook)
         return json.dumps(json_data)
 
-    input_format = 'markdown'
-    input_format += '-implicit_figures'
+    input_format = "markdown"
+    input_format += "-implicit_figures"
     v = nbconvert.utils.pandoc.get_pandoc_version()
-    if nbconvert.utils.version.check_version(v, '1.13'):
-        input_format += '-native_divs+raw_html'
+    if nbconvert.utils.version.check_version(v, "1.13"):
+        input_format += "-native_divs+raw_html"
 
-    rststring = pandoc(text, input_format, 'rst', filter_func=filter_func)
+    rststring = pandoc(text, input_format, "rst", filter_func=filter_func)
     rststring = re.sub(
-        r'^\n( *)\x0e:nowrap:\x0f$',
-        r'\1:nowrap:',
-        rststring,
-        flags=re.MULTILINE)
-    rststring += '\n\n'
-    rststring += '\n'.join(object_hook.image_definitions)
+        r"^\n( *)\x0e:nowrap:\x0f$", r"\1:nowrap:", rststring, flags=re.MULTILINE
+    )
+    rststring += "\n\n"
+    rststring += "\n".join(object_hook.image_definitions)
     return rststring
 
 
@@ -1406,21 +1458,22 @@ def pandoc(source, fmt, to, filter_func=None):
     allow passing a filter function.
 
     """
+
     def encode(text):
-        return text if isinstance(text, bytes) else text.encode('utf-8')
+        return text if isinstance(text, bytes) else text.encode("utf-8")
 
     def decode(data):
-        return data.decode('utf-8') if isinstance(data, bytes) else data
+        return data.decode("utf-8") if isinstance(data, bytes) else data
 
     nbconvert.utils.pandoc.check_pandoc_version()
     v = nbconvert.utils.pandoc.get_pandoc_version()
-    cmd = ['pandoc']
-    if nbconvert.utils.version.check_version(v, '2.0'):
+    cmd = ["pandoc"]
+    if nbconvert.utils.version.check_version(v, "2.0"):
         # see issue #155
-        cmd += ['--eol', 'lf']
-    cmd1 = cmd + ['--from', fmt, '--to', 'json']
-    cmd2 = cmd + ['--from', 'json', '--to', to]
-    cmd2 += ['--columns=500']  # Avoid breaks in tables, see issue #240
+        cmd += ["--eol", "lf"]
+    cmd1 = cmd + ["--from", fmt, "--to", "json"]
+    cmd2 = cmd + ["--from", "json", "--to", to]
+    cmd2 += ["--columns=500"]  # Avoid breaks in tables, see issue #240
 
     p = subprocess.Popen(cmd1, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     json_data, _ = p.communicate(encode(source))
@@ -1430,127 +1483,129 @@ def pandoc(source, fmt, to, filter_func=None):
 
     p = subprocess.Popen(cmd2, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     out, _ = p.communicate(json_data)
-    return decode(out).rstrip('\n')
+    return decode(out).rstrip("\n")
 
 
 def _extract_gallery_or_toctree(cell):
     """Extract links from Markdown cell and create gallery/toctree."""
     # If both are available, "gallery" takes precedent
-    if 'nbsphinx-gallery' in cell.metadata:
-        lines = ['.. nbgallery::']
-        options = cell.metadata['nbsphinx-gallery']
-    elif 'nbsphinx-gallery' in cell.metadata.get('tags', []):
-        lines = ['.. nbgallery::']
+    if "nbsphinx-gallery" in cell.metadata:
+        lines = [".. nbgallery::"]
+        options = cell.metadata["nbsphinx-gallery"]
+    elif "nbsphinx-gallery" in cell.metadata.get("tags", []):
+        lines = [".. nbgallery::"]
         options = {}
-    elif 'nbsphinx-toctree' in cell.metadata:
-        lines = ['.. toctree::']
-        options = cell.metadata['nbsphinx-toctree']
-    elif 'nbsphinx-toctree' in cell.metadata.get('tags', []):
-        lines = ['.. toctree::']
+    elif "nbsphinx-toctree" in cell.metadata:
+        lines = [".. toctree::"]
+        options = cell.metadata["nbsphinx-toctree"]
+    elif "nbsphinx-toctree" in cell.metadata.get("tags", []):
+        lines = [".. toctree::"]
         options = {}
     else:
         assert False
     try:
         for option, value in options.items():
             if value is True:
-                lines.append(':{}:'.format(option))
+                lines.append(":{}:".format(option))
             elif value is False:
                 pass
             else:
-                lines.append(':{}: {}'.format(option, value))
+                lines.append(":{}: {}".format(option, value))
     except AttributeError:
         raise ValueError(
-            'invalid nbsphinx-gallery/nbsphinx-toctree option: {!r}'
-            .format(options))
+            "invalid nbsphinx-gallery/nbsphinx-toctree option: {!r}".format(options)
+        )
 
     text = nbconvert.filters.markdown2rst(cell.source)
     settings = docutils.frontend.OptionParser(
-        components=(rst.Parser,)).get_default_values()
-    node = docutils.utils.new_document('gallery_or_toctree', settings)
+        components=(rst.Parser,)
+    ).get_default_values()
+    node = docutils.utils.new_document("gallery_or_toctree", settings)
     parser = rst.Parser()
     parser.parse(text, node)
 
-    if 'caption' not in options:
+    if "caption" not in options:
         for sec in node.traverse(docutils.nodes.section):
             assert sec.children
             assert isinstance(sec.children[0], docutils.nodes.title)
             title = sec.children[0].astext()
-            lines.append(':caption: ' + title)
+            lines.append(":caption: " + title)
             break
-    lines.append('')  # empty line
+    lines.append("")  # empty line
     for ref in node.traverse(docutils.nodes.reference):
-        lines.append(ref.astext().replace('\n', '') +
-                     ' <' + unquote(ref.get('refuri')) + '>')
-    return '\n    '.join(lines)
+        lines.append(
+            ref.astext().replace("\n", "") + " <" + unquote(ref.get("refuri")) + ">"
+        )
+    return "\n    ".join(lines)
 
 
 def _get_empty_lines(text):
     """Get number of empty lines before and after code."""
-    before = len(text) - len(text.lstrip('\n'))
-    after = len(text) - len(text.strip('\n')) - before
+    before = len(text) - len(text.lstrip("\n"))
+    after = len(text) - len(text.strip("\n")) - before
     return before, after
 
 
 def _get_output_type(output):
     """Choose appropriate output data types for HTML and LaTeX."""
-    if output.output_type == 'stream':
-        html_datatype = latex_datatype = 'text/plain'
+    if output.output_type == "stream":
+        html_datatype = latex_datatype = "text/plain"
         text = output.text
-        output.data = {'text/plain': text[:-1] if text.endswith('\n') else text}
-    elif output.output_type == 'error':
-        html_datatype = latex_datatype = 'text/plain'
-        output.data = {'text/plain': '\n'.join(output.traceback)}
+        output.data = {"text/plain": text[:-1] if text.endswith("\n") else text}
+    elif output.output_type == "error":
+        html_datatype = latex_datatype = "text/plain"
+        output.data = {"text/plain": "\n".join(output.traceback)}
     else:
         for datatype in DISPLAY_DATA_PRIORITY_HTML:
             if datatype in output.data:
                 html_datatype = datatype
                 break
         else:
-            html_datatype = ', '.join(output.data.keys())
+            html_datatype = ", ".join(output.data.keys())
         for datatype in DISPLAY_DATA_PRIORITY_LATEX:
             if datatype in output.data:
                 latex_datatype = datatype
                 break
         else:
-            latex_datatype = ', '.join(output.data.keys())
+            latex_datatype = ", ".join(output.data.keys())
     return html_datatype, latex_datatype
 
 
 def _local_file_from_reference(node, document):
     """Get local file path from reference and detect fragment identifier."""
     # NB: Anonymous hyperlinks must be already resolved at this point!
-    refuri = node.get('refuri')
+    refuri = node.get("refuri")
     if not refuri:
-        refname = node.get('refname')
+        refname = node.get("refname")
         if refname:
             refid = document.nameids.get(refname)
         else:
             # NB: This can happen for anonymous hyperlinks
-            refid = node.get('refid')
+            refid = node.get("refid")
         target = document.ids.get(refid)
         if not target:
             # No corresponding target, Sphinx may warn later
-            return '', ''
-        refuri = target.get('refuri')
+            return "", ""
+        refuri = target.get("refuri")
         if not refuri:
             # Target doesn't have URI
-            return '', ''
-    if '://' in refuri:
+            return "", ""
+    if "://" in refuri:
         # Not a local link
-        return '', ''
-    elif refuri.startswith('#') or refuri.startswith('mailto:'):
+        return "", ""
+    elif refuri.startswith("#") or refuri.startswith("mailto:"):
         # Not a local link
-        return '', ''
+        return "", ""
 
     # NB: We look for "fragment identifier" before unquoting
-    match = re.match(r'^([^#]*)(#.*)$', refuri)
+    match = re.match(r"^([^#]*)(#.*)$", refuri)
     if match:
         filename = unquote(match.group(1))
         # NB: The "fragment identifier" is not unquoted
         fragment = match.group(2)
     else:
         filename = unquote(refuri)
-        fragment = ''
+        fragment = ""
     return filename, fragment
 
 
@@ -1578,36 +1633,41 @@ class RewriteLocalLinks(docutils.transforms.Transform):
     def apply(self):
         env = self.document.settings.env
         for node in self.document.traverse(docutils.nodes.reference):
-            filename, fragment = _local_file_from_reference(
-                node, self.document)
+            filename, fragment = _local_file_from_reference(node, self.document)
             if not filename:
                 continue
 
             for s in env.config.source_suffix:
                 if filename.lower().endswith(s.lower()):
                     assert len(s) > 0
-                    target = filename[:-len(s)]
-                    suffix = filename[-len(s):]
+                    target = filename[: -len(s)]
+                    suffix = filename[-len(s) :]
                     if fragment:
                         target_ext = suffix + fragment
-                        reftype = 'ref'
+                        reftype = "ref"
                     else:
-                        target_ext = ''
-                        reftype = 'doc'
+                        target_ext = ""
+                        reftype = "doc"
                     break
             else:
                 continue  # Not a link to a potential Sphinx source file
 
-            target_docname = nbconvert.filters.posix_path(os.path.normpath(
-                os.path.join(os.path.dirname(env.docname), target)))
+            target_docname = nbconvert.filters.posix_path(
+                os.path.normpath(os.path.join(os.path.dirname(env.docname), target))
+            )
             if target_docname in env.found_docs:
-                reftarget = '/' + target_docname + target_ext
-                if reftype == 'ref':
+                reftarget = "/" + target_docname + target_ext
+                if reftype == "ref":
                     reftarget = reftarget.lower()
                 linktext = node.astext()
                 xref = sphinx.addnodes.pending_xref(
-                    reftype=reftype, reftarget=reftarget, refdomain='std',
-                    refwarn=True, refexplicit=True, refdoc=env.docname)
+                    reftype=reftype,
+                    reftarget=reftarget,
+                    refdomain="std",
+                    refwarn=True,
+                    refexplicit=True,
+                    refdoc=env.docname,
+                )
                 xref += docutils.nodes.Text(linktext, linktext)
                 node.replace_self(xref)
             else:
@@ -1630,17 +1690,19 @@ class CreateNotebookSectionAnchors(docutils.transforms.Transform):
         all_ids = set()
         for section in self.document.traverse(docutils.nodes.section):
             title = section.children[0].astext()
-            link_id = title.replace(' ', '-')
+            link_id = title.replace(" ", "-")
             if link_id in all_ids:
                 # Avoid duplicated anchors on the same page
                 continue
             all_ids.add(link_id)
-            section['ids'] = [link_id]
+            section["ids"] = [link_id]
         if not all_ids:
             logger.warning(
-                'Each notebook should have at least one section title',
+                "Each notebook should have at least one section title",
                 location=self.document[0],
-                type='nbsphinx', subtype='notebooktitle')
+                type="nbsphinx",
+                subtype="notebooktitle",
+            )
 
 
 class CreateSectionLabels(docutils.transforms.Transform):
@@ -1655,27 +1717,23 @@ class CreateSectionLabels(docutils.transforms.Transform):
 
     def apply(self):
         env = self.document.settings.env
-        file_ext = env.doc2path(env.docname, base=None)[len(env.docname):]
+        file_ext = env.doc2path(env.docname, base=None)[len(env.docname) :]
         i_still_have_to_create_the_document_label = True
         for section in self.document.traverse(docutils.nodes.section):
             assert section.children
             assert isinstance(section.children[0], docutils.nodes.title)
             title = section.children[0].astext()
-            link_id = section['ids'][0]
-            label = '/' + env.docname + file_ext + '#' + link_id
+            link_id = section["ids"][0]
+            label = "/" + env.docname + file_ext + "#" + link_id
             label = label.lower()
-            env.domaindata['std']['labels'][label] = (
-                env.docname, link_id, title)
-            env.domaindata['std']['anonlabels'][label] = (
-                env.docname, link_id)
+            env.domaindata["std"]["labels"][label] = (env.docname, link_id, title)
+            env.domaindata["std"]["anonlabels"][label] = (env.docname, link_id)
 
             # Create a label for the whole document using the first section:
             if i_still_have_to_create_the_document_label:
-                label = '/' + env.docname.lower() + file_ext
-                env.domaindata['std']['labels'][label] = (
-                    env.docname, '', title)
-                env.domaindata['std']['anonlabels'][label] = (
-                    env.docname, '')
+                label = "/" + env.docname.lower() + file_ext
+                env.domaindata["std"]["labels"][label] = (env.docname, "", title)
+                env.domaindata["std"]["anonlabels"][label] = (env.docname, "")
                 i_still_have_to_create_the_document_label = False
 
 
@@ -1686,21 +1744,19 @@ class CreateDomainObjectLabels(docutils.transforms.Transform):
 
     def apply(self):
         env = self.document.settings.env
-        file_ext = env.doc2path(env.docname, base=None)[len(env.docname):]
+        file_ext = env.doc2path(env.docname, base=None)[len(env.docname) :]
         for sig in self.document.traverse(sphinx.addnodes.desc_signature):
             try:
-                title = sig['ids'][0]
+                title = sig["ids"][0]
             except IndexError:
                 # Object has same name as another, so skip it
                 continue
-            link_id = title.replace(' ', '-')
-            sig['ids'] = [link_id]
-            label = '/' + env.docname + file_ext + '#' + link_id
+            link_id = title.replace(" ", "-")
+            sig["ids"] = [link_id]
+            label = "/" + env.docname + file_ext + "#" + link_id
             label = label.lower()
-            env.domaindata['std']['labels'][label] = (
-                env.docname, link_id, title)
-            env.domaindata['std']['anonlabels'][label] = (
-                env.docname, link_id)
+            env.domaindata["std"]["labels"][label] = (env.docname, link_id, title)
+            env.domaindata["std"]["anonlabels"][label] = (env.docname, link_id)
 
 
 class ReplaceAlertDivs(docutils.transforms.Transform):
@@ -1715,14 +1771,15 @@ class ReplaceAlertDivs(docutils.transforms.Transform):
 
     _start_re = re.compile(
         r'\s*<div\s*class\s*=\s*(?P<q>"|\')([a-z\s-]*)(?P=q)\s*>\s*\Z',
-        flags=re.IGNORECASE)
-    _class_re = re.compile(r'\s*alert\s*alert-(info|warning)\s*\Z')
-    _end_re = re.compile(r'\s*</div\s*>\s*\Z', flags=re.IGNORECASE)
+        flags=re.IGNORECASE,
+    )
+    _class_re = re.compile(r"\s*alert\s*alert-(info|warning)\s*\Z")
+    _end_re = re.compile(r"\s*</div\s*>\s*\Z", flags=re.IGNORECASE)
 
     def apply(self):
         start_tags = []
         for node in self.document.traverse(docutils.nodes.raw):
-            if node['format'] != 'html':
+            if node["format"] != "html":
                 continue
             start_match = self._start_re.match(node.astext())
             if not start_match:
@@ -1731,21 +1788,25 @@ class ReplaceAlertDivs(docutils.transforms.Transform):
             if not class_match:
                 continue
             admonition_class = class_match.group(1)
-            if admonition_class == 'info':
-                admonition_class = 'note'
+            if admonition_class == "info":
+                admonition_class = "note"
             start_tags.append((node, admonition_class))
 
         # Reversed order to allow nested <div> elements:
         for node, admonition_class in reversed(start_tags):
             content = []
-            for sibling in node.traverse(include_self=False, descend=False,
-                                         siblings=True, ascend=False):
-                end_tag = (isinstance(sibling, docutils.nodes.raw) and
-                           sibling['format'] == 'html' and
-                           self._end_re.match(sibling.astext()))
+            for sibling in node.traverse(
+                include_self=False, descend=False, siblings=True, ascend=False
+            ):
+                end_tag = (
+                    isinstance(sibling, docutils.nodes.raw)
+                    and sibling["format"] == "html"
+                    and self._end_re.match(sibling.astext())
+                )
                 if end_tag:
                     admonition_node = AdmonitionNode(
-                        classes=['admonition', admonition_class])
+                        classes=["admonition", admonition_class]
+                    )
                     admonition_node.extend(content)
                     parent = node.parent
                     parent.replace(node, admonition_node)
@@ -1765,28 +1826,33 @@ class CopyLinkedFiles(docutils.transforms.Transform):
     def apply(self):
         env = self.document.settings.env
         for node in self.document.traverse(docutils.nodes.reference):
-            filename, fragment = _local_file_from_reference(
-                node, self.document)
+            filename, fragment = _local_file_from_reference(node, self.document)
             if not filename:
                 continue  # Not a local link
             relpath = filename + fragment
-            file = os.path.normpath(
-                os.path.join(os.path.dirname(env.docname), relpath))
+            file = os.path.normpath(os.path.join(os.path.dirname(env.docname), relpath))
             if not os.path.isfile(os.path.join(env.srcdir, file)):
                 logger.warning(
-                    'File not found: %r', file, location=node,
-                    type='nbsphinx', subtype='localfile')
+                    "File not found: %r",
+                    file,
+                    location=node,
+                    type="nbsphinx",
+                    subtype="localfile",
+                )
                 continue  # Link is ignored
-            elif file.startswith('..'):
+            elif file.startswith(".."):
                 logger.warning(
-                    'Link outside source directory: %r', file, location=node,
-                    type='nbsphinx', subtype='localfile')
+                    "Link outside source directory: %r",
+                    file,
+                    location=node,
+                    type="nbsphinx",
+                    subtype="localfile",
+                )
                 continue  # Link is ignored
             env.nbsphinx_files.setdefault(env.docname, []).append(file)
 
 
-class GetSizeFromImages(
-        sphinx.transforms.post_transforms.images.BaseImageConverter):
+class GetSizeFromImages(sphinx.transforms.post_transforms.images.BaseImageConverter):
     """Get size from images and store it as node attributes.
 
     This is only done for LaTeX output.
@@ -1797,15 +1863,15 @@ class GetSizeFromImages(
     default_priority = 200
 
     def match(self, node):
-        return self.app.builder.format == 'latex'
+        return self.app.builder.format == "latex"
 
     def handle(self, node):
-        if 'width' not in node and 'height' not in node:
+        if "width" not in node and "height" not in node:
             srcdir = os.path.dirname(self.env.doc2path(self.env.docname))
-            image_path = os.path.normpath(os.path.join(srcdir, node['uri']))
+            image_path = os.path.normpath(os.path.join(srcdir, node["uri"]))
             size = sphinx.util.images.get_image_size(image_path)
             if size is not None:
-                node['width'], node['height'] = map(str, size)
+                node["width"], node["height"] = map(str, size)
 
 
 original_toctree_resolve = sphinx.environment.adapters.toctree.TocTree.resolve
@@ -1820,12 +1886,11 @@ def patched_toctree_resolve(self, docname, builder, toctree, *args, **kwargs):
     section links are shown in higher-level tables of contents.
 
     """
-    gallery = toctree.get('nbsphinx_gallery', False)
+    gallery = toctree.get("nbsphinx_gallery", False)
     if gallery:
         toctree = toctree.copy()
-        toctree['hidden'] = False
-    node = original_toctree_resolve(
-        self, docname, builder, toctree, *args, **kwargs)
+        toctree["hidden"] = False
+    node = original_toctree_resolve(self, docname, builder, toctree, *args, **kwargs)
     if not gallery or node is None:
         return node
     if isinstance(node[0], docutils.nodes.caption):
@@ -1837,40 +1902,42 @@ def patched_toctree_resolve(self, docname, builder, toctree, *args, **kwargs):
 
 def config_inited(app, config):
     for suffix in config.nbsphinx_custom_formats:
-        app.add_source_suffix(suffix, 'jupyter_notebook')
+        app.add_source_suffix(suffix, "jupyter_notebook")
 
-    if '**.ipynb_checkpoints' not in config.exclude_patterns:
-        config.exclude_patterns.append('**.ipynb_checkpoints')
+    if "**.ipynb_checkpoints" not in config.exclude_patterns:
+        config.exclude_patterns.append("**.ipynb_checkpoints")
 
     # Make sure require.js is loaded after all other extensions,
     # see https://github.com/spatialaudio/nbsphinx/issues/409
-    app.connect('builder-inited', load_requirejs)
+    app.connect("builder-inited", load_requirejs)
 
 
 def load_requirejs(app):
     config = app.config
     if config.nbsphinx_requirejs_path is None:
-        config.nbsphinx_requirejs_path = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js'
+        config.nbsphinx_requirejs_path = (
+            "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
+        )
     if config.nbsphinx_requirejs_options is None:
         config.nbsphinx_requirejs_options = {
-            'integrity': 'sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=',
-            'crossorigin': 'anonymous',
+            "integrity": "sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=",
+            "crossorigin": "anonymous",
         }
     if config.nbsphinx_requirejs_path:
         # TODO: Add only on pages created from notebooks?
         app.add_js_file(
-            config.nbsphinx_requirejs_path,
-            **config.nbsphinx_requirejs_options)
+            config.nbsphinx_requirejs_path, **config.nbsphinx_requirejs_options
+        )
 
 
 def builder_inited(app):
     env = app.env
     env.nbsphinx_notebooks = {}
     env.nbsphinx_files = {}
-    if not hasattr(env, 'nbsphinx_thumbnails'):
+    if not hasattr(env, "nbsphinx_thumbnails"):
         env.nbsphinx_thumbnails = {}
     env.nbsphinx_widgets = set()
-    env.nbsphinx_auxdir = os.path.join(env.doctreedir, 'nbsphinx')
+    env.nbsphinx_auxdir = os.path.join(env.doctreedir, "nbsphinx")
     sphinx.util.ensuredir(env.nbsphinx_auxdir)
 
 
@@ -1900,19 +1967,19 @@ def env_purge_doc(app, env, docname):
 
 def html_page_context(app, pagename, templatename, context, doctree):
     """Add CSS string to HTML pages that contain code cells."""
-    style = ''
-    if doctree and doctree.get('nbsphinx_include_css'):
+    style = ""
+    if doctree and doctree.get("nbsphinx_include_css"):
         style += CSS_STRING % app.config
     if doctree and app.config.html_theme in (
-            'sphinx_rtd_theme',
-            'julia',
-            'dask_sphinx_theme',
-            ):
+        "sphinx_rtd_theme",
+        "julia",
+        "dask_sphinx_theme",
+    ):
         style += CSS_STRING_READTHEDOCS
-    if doctree and app.config.html_theme.endswith('cloud'):
+    if doctree and app.config.html_theme.endswith("cloud"):
         style += CSS_STRING_CLOUD
     if style:
-        context['body'] = '\n<style>' + style + '</style>\n' + context['body']
+        context["body"] = "\n<style>" + style + "</style>\n" + context["body"]
 
 
 def html_collect_pages(app):
@@ -1921,23 +1988,29 @@ def html_collect_pages(app):
     for file_list in app.env.nbsphinx_files.values():
         files.update(file_list)
     status_iterator = sphinx.util.status_iterator
-    for file in status_iterator(files, 'copying linked files... ',
-                                sphinx.util.console.brown, len(files)):
+    for file in status_iterator(
+        files, "copying linked files... ", sphinx.util.console.brown, len(files)
+    ):
         target = os.path.join(app.builder.outdir, file)
         sphinx.util.ensuredir(os.path.dirname(target))
         try:
             sphinx.util.copyfile(os.path.join(app.env.srcdir, file), target)
         except OSError as err:
             logger.warning(
-                'Cannot copy local file %r: %s', file, err,
-                type='nbsphinx', subtype='localfile')
+                "Cannot copy local file %r: %s",
+                file,
+                err,
+                type="nbsphinx",
+                subtype="localfile",
+            )
     notebooks = app.env.nbsphinx_notebooks.values()
     for notebook in status_iterator(
-            notebooks, 'copying notebooks ... ',
-            'brown', len(notebooks)):
+        notebooks, "copying notebooks ... ", "brown", len(notebooks)
+    ):
         sphinx.util.copyfile(
             os.path.join(app.env.nbsphinx_auxdir, notebook),
-            os.path.join(app.builder.outdir, notebook))
+            os.path.join(app.builder.outdir, notebook),
+        )
     return []  # No new HTML pages are created
 
 
@@ -1949,13 +2022,15 @@ def env_updated(app, env):
                 from ipywidgets.embed import DEFAULT_EMBED_REQUIREJS_URL
             except ImportError:
                 logger.warning(
-                    'nbsphinx_widgets_path not given '
-                    'and ipywidgets module unavailable',
-                    type='nbsphinx', subtype='ipywidgets')
+                    "nbsphinx_widgets_path not given "
+                    "and ipywidgets module unavailable",
+                    type="nbsphinx",
+                    subtype="ipywidgets",
+                )
             else:
                 widgets_path = DEFAULT_EMBED_REQUIREJS_URL
         else:
-            widgets_path = ''
+            widgets_path = ""
 
     if widgets_path:
         app.add_js_file(widgets_path, **app.config.nbsphinx_widgets_options)
@@ -1964,27 +2039,29 @@ def env_updated(app, env):
 def doctree_resolved(app, doctree, fromdocname):
     # Replace GalleryToc with toctree + GalleryNode
     for node in doctree.traverse(GalleryToc):
-        toctree_wrapper, = node
-        if (len(toctree_wrapper) != 1 or
-                not isinstance(toctree_wrapper[0], sphinx.addnodes.toctree)):
+        (toctree_wrapper,) = node
+        if len(toctree_wrapper) != 1 or not isinstance(
+            toctree_wrapper[0], sphinx.addnodes.toctree
+        ):
             # This happens for LaTeX output
             node.replace_self(node.children)
             continue
-        toctree, = toctree_wrapper
+        (toctree,) = toctree_wrapper
         entries = []
-        for title, doc in toctree['entries']:
-            if doc in toctree['includefiles']:
+        for title, doc in toctree["entries"]:
+            if doc in toctree["includefiles"]:
                 if title is None:
                     title = app.env.titles[doc].astext()
                 uri = app.builder.get_relative_uri(fromdocname, doc)
                 base = sphinx.util.osutil.relative_uri(
-                    app.builder.get_target_uri(fromdocname), '')
+                    app.builder.get_target_uri(fromdocname), ""
+                )
 
                 # NB: This is how Sphinx implements the "html_sidebars"
                 #     config value in StandaloneHTMLBuilder.add_sidebars()
 
                 def has_wildcard(pattern):
-                    return any(char in pattern for char in '*?[')
+                    return any(char in pattern for char in "*?[")
 
                 matched = None
                 conf_py_thumbnail = None
@@ -1996,10 +2073,14 @@ def doctree_resolved(app, doctree, fromdocname):
                                 # warn if both patterns contain wildcards
                                 if has_wildcard(matched):
                                     logger.warning(
-                                        'page %s matches two patterns in '
-                                        'nbsphinx_thumbnails: %r and %r',
-                                        doc, matched, pattern,
-                                        type='nbsphinx', subtype='thumbnail')
+                                        "page %s matches two patterns in "
+                                        "nbsphinx_thumbnails: %r and %r",
+                                        doc,
+                                        matched,
+                                        pattern,
+                                        type="nbsphinx",
+                                        subtype="thumbnail",
+                                    )
                                 # else the already matched pattern is more
                                 # specific than the present one, because it
                                 # contains no wildcard
@@ -2008,28 +2089,30 @@ def doctree_resolved(app, doctree, fromdocname):
                         conf_py_thumbnail = candidate
 
                 thumbnail = app.env.nbsphinx_thumbnails.get(doc, {})
-                tooltip = thumbnail.get('tooltip', '')
-                filename = thumbnail.get('filename', '')
+                tooltip = thumbnail.get("tooltip", "")
+                filename = thumbnail.get("filename", "")
                 if filename is _BROKEN_THUMBNAIL:
-                    filename = os.path.join(
-                        base, '_static', 'broken_example.png')
+                    filename = os.path.join(base, "_static", "broken_example.png")
                 elif filename:
-                    filename = os.path.join(
-                        base, app.builder.imagedir, filename)
+                    filename = os.path.join(base, app.builder.imagedir, filename)
                 elif conf_py_thumbnail:
                     # NB: Settings from conf.py can be overwritten in notebook
                     filename = os.path.join(base, conf_py_thumbnail)
                 else:
-                    filename = os.path.join(base, '_static', 'no_image.png')
+                    filename = os.path.join(base, "_static", "no_image.png")
                 entries.append((title, uri, filename, tooltip))
             else:
                 logger.warning(
-                    'External links are not supported in gallery: %s', doc,
-                    location=fromdocname, type='nbsphinx', subtype='gallery')
+                    "External links are not supported in gallery: %s",
+                    doc,
+                    location=fromdocname,
+                    type="nbsphinx",
+                    subtype="gallery",
+                )
         gallery = GalleryNode()
-        gallery['entries'] = entries
-        toctree['nbsphinx_gallery'] = True
-        toctree_wrapper[:] = toctree,
+        gallery["entries"] = entries
+        toctree["nbsphinx_gallery"] = True
+        toctree_wrapper[:] = (toctree,)
         node.replace_self([toctree_wrapper, gallery])
         # NB: Further processing happens in patched_toctree_resolve()
 
@@ -2037,10 +2120,8 @@ def doctree_resolved(app, doctree, fromdocname):
 def depart_codearea_html(self, node):
     """Add empty lines before and after the code."""
     text = self.body[-1]
-    text = text.replace('<pre>',
-                        '<pre>\n' + '\n' * node.get('empty-lines-before', 0))
-    text = text.replace('</pre>',
-                        '\n' * node.get('empty-lines-after', 0) + '</pre>')
+    text = text.replace("<pre>", "<pre>\n" + "\n" * node.get("empty-lines-before", 0))
+    text = text.replace("</pre>", "\n" * node.get("empty-lines-after", 0) + "</pre>")
     self.body[-1] = text
 
 
@@ -2056,50 +2137,56 @@ def depart_codearea_latex(self, node):
     * Add prompt
 
     """
-    lines = ''.join(self.popbody()).strip('\n').split('\n')
+    lines = "".join(self.popbody()).strip("\n").split("\n")
     out = []
-    out.append('')
-    out.append('{')  # Start a scope for colors
-    if 'nbinput' in node.parent['classes']:
-        promptcolor = 'nbsphinxin'
-        out.append(r'\sphinxsetup{VerbatimColor={named}{nbsphinx-code-bg}}')
+    out.append("")
+    out.append("{")  # Start a scope for colors
+    if "nbinput" in node.parent["classes"]:
+        promptcolor = "nbsphinxin"
+        out.append(r"\sphinxsetup{VerbatimColor={named}{nbsphinx-code-bg}}")
     else:
-        out.append(r"""
+        out.append(
+            r"""
 \kern-\sphinxverbatimsmallskipamount\kern-\baselineskip
 \kern+\FrameHeightAdjust\kern-\fboxrule
 \vspace{\nbsphinxcodecellspacing}
-""")
-        promptcolor = 'nbsphinxout'
-        if node['stderr']:
-            out.append(r'\sphinxsetup{VerbatimColor={named}{nbsphinx-stderr}}')
+"""
+        )
+        promptcolor = "nbsphinxout"
+        if node["stderr"]:
+            out.append(r"\sphinxsetup{VerbatimColor={named}{nbsphinx-stderr}}")
         else:
-            out.append(r'\sphinxsetup{VerbatimColor={named}{white}}')
+            out.append(r"\sphinxsetup{VerbatimColor={named}{white}}")
 
-    out.append(
-        r'\sphinxsetup{VerbatimBorderColor={named}{nbsphinx-code-border}}')
-    if lines[0].startswith(r'\fvset{'):  # Sphinx >= 1.6.6 and < 1.8.3
+    out.append(r"\sphinxsetup{VerbatimBorderColor={named}{nbsphinx-code-border}}")
+    if lines[0].startswith(r"\fvset{"):  # Sphinx >= 1.6.6 and < 1.8.3
         out.append(lines[0])
         del lines[0]
-    assert 'Verbatim' in lines[0]
+    assert "Verbatim" in lines[0]
     out.append(lines[0])
     code_lines = (
-        [''] * node.get('empty-lines-before', 0) +
-        lines[1:-1] +
-        [''] * node.get('empty-lines-after', 0)
+        [""] * node.get("empty-lines-before", 0)
+        + lines[1:-1]
+        + [""] * node.get("empty-lines-after", 0)
     )
-    prompt = node['prompt']
+    prompt = node["prompt"]
     if prompt:
         prompt = nbconvert.filters.latex.escape_latex(prompt)
-        prefix = r'\llap{\color{' + promptcolor + '}' + prompt + \
-            r'\,\hspace{\fboxrule}\hspace{\fboxsep}}'
+        prefix = (
+            r"\llap{\color{"
+            + promptcolor
+            + "}"
+            + prompt
+            + r"\,\hspace{\fboxrule}\hspace{\fboxsep}}"
+        )
         assert code_lines
         code_lines[0] = prefix + code_lines[0]
     out.extend(code_lines)
-    assert 'Verbatim' in lines[-1]
+    assert "Verbatim" in lines[-1]
     out.append(lines[-1])
-    out.append('}')  # End of scope for colors
-    out.append('')
-    self.body.append('\n'.join(out))
+    out.append("}")  # End of scope for colors
+    out.append("")
+    self.body.append("\n".join(out))
 
 
 def visit_fancyoutput_latex(self, node):
@@ -2107,12 +2194,14 @@ def visit_fancyoutput_latex(self, node):
 \hrule height -\fboxrule\relax
 \vspace{\nbsphinxcodecellspacing}
 """
-    prompt = node['prompt']
+    prompt = node["prompt"]
     if prompt:
         prompt = nbconvert.filters.latex.escape_latex(prompt)
         out += r"""
 \savebox\nbsphinxpromptbox[0pt][r]{\color{nbsphinxout}\Verb|\strut{%s}\,|}
-""" % (prompt,)
+""" % (
+            prompt,
+        )
     else:
         out += r"""
 \makeatletter\setbox\nbsphinxpromptbox\box\voidb@x\makeatother
@@ -2124,37 +2213,39 @@ def visit_fancyoutput_latex(self, node):
 
 
 def depart_fancyoutput_latex(self, node):
-    self.body.append('\n\\end{nbsphinxfancyoutput}\n')
+    self.body.append("\n\\end{nbsphinxfancyoutput}\n")
 
 
 def visit_admonition_html(self, node):
-    self.body.append(self.starttag(node, 'div'))
+    self.body.append(self.starttag(node, "div"))
     if len(node.children) >= 2:
-        node[0]['classes'].append('admonition-title')
+        node[0]["classes"].append("admonition-title")
         html_theme = self.settings.env.config.html_theme
-        if html_theme in ('sphinx_rtd_theme', 'julia', 'dask_sphinx_theme'):
-            node.children[0]['classes'].extend(['fa', 'fa-exclamation-circle'])
+        if html_theme in ("sphinx_rtd_theme", "julia", "dask_sphinx_theme"):
+            node.children[0]["classes"].extend(["fa", "fa-exclamation-circle"])
 
 
 def depart_admonition_html(self, node):
-    self.body.append('</div>\n')
+    self.body.append("</div>\n")
 
 
 def visit_admonition_latex(self, node):
     # See http://tex.stackexchange.com/q/305898/:
     self.body.append(
-        '\n\\begin{sphinxadmonition}{' + node['classes'][1] + '}{}\\unskip')
+        "\n\\begin{sphinxadmonition}{" + node["classes"][1] + "}{}\\unskip"
+    )
 
 
 def depart_admonition_latex(self, node):
-    self.body.append('\\end{sphinxadmonition}\n')
+    self.body.append("\\end{sphinxadmonition}\n")
 
 
 def depart_gallery_html(self, node):
-    for title, uri, filename, tooltip in node['entries']:
+    for title, uri, filename, tooltip in node["entries"]:
         if tooltip:
             tooltip = ' tooltip="{}"'.format(html.escape(tooltip))
-        self.body.append("""\
+        self.body.append(
+            """\
 <div class="sphx-glr-thumbcontainer"{tooltip}>
   <div class="figure align-center">
     <img alt="thumbnail" src="{filename}" />
@@ -2168,11 +2259,12 @@ def depart_gallery_html(self, node):
   </div>
 </div>
 """.format(
-            uri=html.escape(uri),
-            title=html.escape(title),
-            tooltip=tooltip,
-            filename=html.escape(filename),
-        ))
+                uri=html.escape(uri),
+                title=html.escape(title),
+                tooltip=tooltip,
+                filename=html.escape(filename),
+            )
+        )
     self.body.append('<div class="sphx-glr-clear"></div>')
 
 
@@ -2182,56 +2274,64 @@ def do_nothing(self, node):
 
 def setup(app):
     """Initialize Sphinx extension."""
-    app.add_source_suffix('.ipynb', 'jupyter_notebook')
+    app.add_source_suffix(".ipynb", "jupyter_notebook")
     app.add_source_parser(NotebookParser)
 
-    app.add_config_value('nbsphinx_execute', 'auto', rebuild='env')
-    app.add_config_value('nbsphinx_kernel_name', '', rebuild='env')
-    app.add_config_value('nbsphinx_execute_arguments', [], rebuild='env')
-    app.add_config_value('nbsphinx_allow_errors', False, rebuild='')
-    app.add_config_value('nbsphinx_timeout', None, rebuild='')
-    app.add_config_value('nbsphinx_codecell_lexer', 'none', rebuild='env')
-    app.add_config_value('nbsphinx_prompt_width', '4.5ex', rebuild='html')
-    app.add_config_value('nbsphinx_responsive_width', '540px', rebuild='html')
-    app.add_config_value('nbsphinx_prolog', None, rebuild='env')
-    app.add_config_value('nbsphinx_epilog', None, rebuild='env')
-    app.add_config_value('nbsphinx_input_prompt', '[%s]:', rebuild='env')
-    app.add_config_value('nbsphinx_output_prompt', '[%s]:', rebuild='env')
-    app.add_config_value('nbsphinx_custom_formats', {}, rebuild='env')
+    app.add_config_value("nbsphinx_execute", "auto", rebuild="env")
+    app.add_config_value("nbsphinx_kernel_name", "", rebuild="env")
+    app.add_config_value("nbsphinx_execute_arguments", [], rebuild="env")
+    app.add_config_value("nbsphinx_allow_errors", False, rebuild="")
+    app.add_config_value("nbsphinx_timeout", None, rebuild="")
+    app.add_config_value("nbsphinx_codecell_lexer", "none", rebuild="env")
+    app.add_config_value("nbsphinx_prompt_width", "4.5ex", rebuild="html")
+    app.add_config_value("nbsphinx_responsive_width", "540px", rebuild="html")
+    app.add_config_value("nbsphinx_prolog", None, rebuild="env")
+    app.add_config_value("nbsphinx_epilog", None, rebuild="env")
+    app.add_config_value("nbsphinx_input_prompt", "[%s]:", rebuild="env")
+    app.add_config_value("nbsphinx_output_prompt", "[%s]:", rebuild="env")
+    app.add_config_value("nbsphinx_custom_formats", {}, rebuild="env")
     # Default value is set in config_inited():
-    app.add_config_value('nbsphinx_requirejs_path', None, rebuild='html')
+    app.add_config_value("nbsphinx_requirejs_path", None, rebuild="html")
     # Default value is set in config_inited():
-    app.add_config_value('nbsphinx_requirejs_options', None, rebuild='html')
+    app.add_config_value("nbsphinx_requirejs_options", None, rebuild="html")
     # This will be updated in env_updated():
-    app.add_config_value('nbsphinx_widgets_path', None, rebuild='html')
-    app.add_config_value('nbsphinx_widgets_options', {}, rebuild='html')
-    app.add_config_value('nbsphinx_thumbnails', {}, rebuild='html')
+    app.add_config_value("nbsphinx_widgets_path", None, rebuild="html")
+    app.add_config_value("nbsphinx_widgets_options", {}, rebuild="html")
+    app.add_config_value("nbsphinx_thumbnails", {}, rebuild="html")
 
-    app.add_directive('nbinput', NbInput)
-    app.add_directive('nboutput', NbOutput)
-    app.add_directive('nbinfo', NbInfo)
-    app.add_directive('nbwarning', NbWarning)
-    app.add_directive('nbgallery', NbGallery)
-    app.add_node(CodeAreaNode,
-                 html=(do_nothing, depart_codearea_html),
-                 latex=(visit_codearea_latex, depart_codearea_latex))
-    app.add_node(FancyOutputNode,
-                 html=(do_nothing, do_nothing),
-                 latex=(visit_fancyoutput_latex, depart_fancyoutput_latex))
-    app.add_node(AdmonitionNode,
-                 html=(visit_admonition_html, depart_admonition_html),
-                 latex=(visit_admonition_latex, depart_admonition_latex))
-    app.add_node(GalleryNode,
-                 html=(do_nothing, depart_gallery_html),
-                 latex=(do_nothing, do_nothing))
-    app.connect('builder-inited', builder_inited)
-    app.connect('config-inited', config_inited)
-    app.connect('html-page-context', html_page_context)
-    app.connect('html-collect-pages', html_collect_pages)
-    app.connect('env-purge-doc', env_purge_doc)
-    app.connect('env-updated', env_updated)
-    app.connect('doctree-resolved', doctree_resolved)
-    app.connect('env-merge-info', env_merge_info)
+    app.add_directive("nbinput", NbInput)
+    app.add_directive("nboutput", NbOutput)
+    app.add_directive("nbinfo", NbInfo)
+    app.add_directive("nbwarning", NbWarning)
+    app.add_directive("nbgallery", NbGallery)
+    app.add_node(
+        CodeAreaNode,
+        html=(do_nothing, depart_codearea_html),
+        latex=(visit_codearea_latex, depart_codearea_latex),
+    )
+    app.add_node(
+        FancyOutputNode,
+        html=(do_nothing, do_nothing),
+        latex=(visit_fancyoutput_latex, depart_fancyoutput_latex),
+    )
+    app.add_node(
+        AdmonitionNode,
+        html=(visit_admonition_html, depart_admonition_html),
+        latex=(visit_admonition_latex, depart_admonition_latex),
+    )
+    app.add_node(
+        GalleryNode,
+        html=(do_nothing, depart_gallery_html),
+        latex=(do_nothing, do_nothing),
+    )
+    app.connect("builder-inited", builder_inited)
+    app.connect("config-inited", config_inited)
+    app.connect("html-page-context", html_page_context)
+    app.connect("html-collect-pages", html_collect_pages)
+    app.connect("env-purge-doc", env_purge_doc)
+    app.connect("env-updated", env_updated)
+    app.connect("doctree-resolved", doctree_resolved)
+    app.connect("env-merge-info", env_merge_info)
     app.add_transform(CreateSectionLabels)
     app.add_transform(CreateDomainObjectLabels)
     app.add_transform(RewriteLocalLinks)
@@ -2240,34 +2340,32 @@ def setup(app):
     # Make docutils' "code" directive (generated by markdown2rst/pandoc)
     # behave like Sphinx's "code-block",
     # see https://github.com/sphinx-doc/sphinx/issues/2155:
-    rst.directives.register_directive('code', sphinx.directives.code.CodeBlock)
+    rst.directives.register_directive("code", sphinx.directives.code.CodeBlock)
 
     # Work-around until https://github.com/sphinx-doc/sphinx/pull/5504 is done:
-    mathjax_config = app.config._raw_config.setdefault('mathjax_config', {})
+    mathjax_config = app.config._raw_config.setdefault("mathjax_config", {})
     mathjax_config.setdefault(
-        'tex2jax',
+        "tex2jax",
         {
-            'inlineMath': [['$', '$'], ['\\(', '\\)']],
-            'processEscapes': True,
-            'ignoreClass': 'document',
-            'processClass': 'math|output_area',
-        }
+            "inlineMath": [["$", "$"], ["\\(", "\\)"]],
+            "processEscapes": True,
+            "ignoreClass": "document",
+            "processClass": "math|output_area",
+        },
     )
 
     # Add LaTeX definitions to preamble
-    latex_elements = app.config._raw_config.setdefault('latex_elements', {})
-    latex_elements['preamble'] = '\n'.join([
-        LATEX_PREAMBLE,
-        latex_elements.get('preamble', ''),
-    ])
+    latex_elements = app.config._raw_config.setdefault("latex_elements", {})
+    latex_elements["preamble"] = "\n".join(
+        [LATEX_PREAMBLE, latex_elements.get("preamble", ""),]
+    )
 
     # Monkey-patch Sphinx TocTree adapter
-    sphinx.environment.adapters.toctree.TocTree.resolve = \
-        patched_toctree_resolve
+    sphinx.environment.adapters.toctree.TocTree.resolve = patched_toctree_resolve
 
     return {
-        'version': __version__,
-        'parallel_read_safe': True,
-        'parallel_write_safe': True,
-        'env_version': 3,
+        "version": __version__,
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
+        "env_version": 3,
     }
